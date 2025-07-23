@@ -1,0 +1,23 @@
+# Node.js
+node_modules/
+
+# Logs
+*.log
+
+# Environment Variables
+.env
+
+# Editor-specific files
+*.bak
+*.swp
+
+# Temporary or test files
+*.test.js
+coverage/
+
+# Other generated files
+*.pid
+
+ActiveAttorneyRoster*.xlsx
+
+

@@ -1,0 +1,17 @@
+const mongoose = require("mongoose");
+
+// Define the schema for login
+const loginSchema = new mongoose.Schema({
+  firstName:{type: String, required: true },
+  lastName:{type: String, required: true },
+  contact:{type: String, required: true },
+  userId: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  userType: { type: String, required: true },
+  email: { type: String, required: true },
+  date: { type: Date, default: Date.now },
+});
+
+// Create and export the model
+const LoginModel = mongoose.model("newUserlogins", loginSchema); // Match the collection name in MongoDB
+module.exports = LoginModel;

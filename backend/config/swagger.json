@@ -1,0 +1,2113 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Roster API",
+    "version": "1.0.0",
+    "description": "API documentation for the Roster management system"
+  },
+  "servers": [
+    {
+      "url": "https://roster1.sigvitas.com",
+      "description": "Production server"
+    },
+    {
+      "url": "http://localhost:3001",
+      "description": "Local development server"
+    }
+  ],
+  "paths": {
+    "/api/check-login": {
+      "post": {
+        "summary": "Check employee or admin login",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnauthorizedResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/save-employee-details": {
+      "post": {
+        "summary": "Save employee details from NewUsersLoginModel to LoginModel",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveEmployeeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Employee details saved and email sent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SaveEmployeeResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Employee not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/save-new-employee-details": {
+      "post": {
+        "summary": "Create a new employee in NewUsersLoginModel",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewEmployeeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Employee details saved and email sent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NewEmployeeResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/get-api-key": {
+      "get": {
+        "summary": "Retrieve the current API key (for internal use)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "API key retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "apiKey": {
+                      "type": "string",
+                      "example": "abc123xyz456"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No API key found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/add-user": {
+      "post": {
+        "summary": "Add a new user to the system",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddUserRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User added successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddUserResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/update-user/{slNo}": {
+      "put": {
+        "summary": "Update user details by serial number",
+        "parameters": [
+          {
+            "name": "slNo",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Serial number of the user to update"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateUserResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/update-users": {
+      "put": {
+        "summary": "Update multiple users by regCode",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/UpdateUserRequest"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "All users updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateUsersResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/update-users2": {
+      "put": {
+        "summary": "Update multiple users by regCode with selective field updates",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/UpdateUserRequest"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Users updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Users updated successfully"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/fetch-users": {
+      "get": {
+        "summary": "Fetch users by userId",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "User ID to fetch users"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Data fetched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FetchUsersResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No data found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/AllData": {
+      "get": {
+        "summary": "Fetch all user data",
+        "responses": {
+          "200": {
+            "description": "Data fetched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FetchUsersResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No data found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/all-users-data": {
+      "get": {
+        "summary": "Fetch all users with pagination and optional letter filter",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            },
+            "description": "Page number for pagination"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1000
+            },
+            "description": "Number of records per page"
+          },
+          {
+            "name": "letter",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter users by name starting with this letter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Users fetched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AllUsersDataResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/all-users-data-filtering": {
+      "get": {
+        "summary": "Fetch users with dynamic filtering",
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "schema": {
+              "type": "object"
+            },
+            "description": "Dynamic filter parameters"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Data fetched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FetchUsersResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/all-users": {
+      "get": {
+        "summary": "Fetch all users from UserLoginsModel",
+        "responses": {
+          "200": {
+            "description": "Users fetched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FetchUsersResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No users found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/delete-user/{userId}": {
+      "delete": {
+        "summary": "Delete a user by email",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Email of the user to delete"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "User deleted successfully"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/analysis": {
+      "get": {
+        "summary": "Fetch analysis data",
+        "responses": {
+          "200": {
+            "description": "Analysis data fetched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Analysis"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/updatedprofilescomparisons": {
+      "get": {
+        "summary": "Fetch updated profiles comparison data",
+        "responses": {
+          "200": {
+            "description": "Updated profiles fetched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UpdatedProfile"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/updatedprofilescomparisons2": {
+      "get": {
+        "summary": "Fetch updated profiles comparison data (alternative endpoint)",
+        "responses": {
+          "200": {
+            "description": "Updated profiles fetched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UpdatedProfile"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/FetchAllData": {
+      "get": {
+        "summary": "Fetch all user data with API key verification",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Data fetched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/User"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Invalid API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "❌ Invalid API Key"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/fetchAllDataToCompare": {
+      "get": {
+        "summary": "Fetch all user data for comparison",
+        "responses": {
+          "200": {
+            "description": "Data fetched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/User"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/newlyAddedProfiles": {
+      "get": {
+        "summary": "Fetch newly added profiles",
+        "responses": {
+          "200": {
+            "description": "Newly added profiles fetched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NewProfile"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/newlyAddedProfiles2": {
+      "get": {
+        "summary": "Fetch newly added profiles with formatted data",
+        "responses": {
+          "200": {
+            "description": "Newly added profiles fetched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FormattedNewProfile"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/removedProfiles": {
+      "get": {
+        "summary": "Fetch removed profiles",
+        "responses": {
+          "200": {
+            "description": "Removed profiles fetched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FormattedRemovedProfile"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/updated-profiles": {
+      "get": {
+        "summary": "Fetch updated profiles",
+        "responses": {
+          "200": {
+            "description": "Updated profiles fetched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UpdatedProfile"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/IndivisualDataFetching": {
+      "get": {
+        "summary": "Fetch individual data by field and query",
+        "parameters": [
+          {
+            "name": "field",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "regCode", "name", "organization", "addressLine1", "addressLine2",
+                "city", "state", "country", "zipcode", "phoneNumber", "agentAttorney",
+                "dateOfPatent", "agentLicensed", "firmOrOrganization", "updatedPhoneNumber",
+                "emailAddress", "updatedOrganization", "firmUrl", "updatedAddress",
+                "updatedCity", "updatedState", "updatedCountry", "updatedZipcode",
+                "linkedInProfile", "notes", "dataUpdatedAsOn"
+              ]
+            },
+            "description": "Field to search by"
+          },
+          {
+            "name": "query",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Search query (comma-separated for multiple values)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Profiles fetched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/User"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No matching profiles found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/upload-excel-dynamic": {
+      "post": {
+        "summary": "Upload and process Excel file to update user data",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "excelFile": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Excel file to upload"
+                  },
+                  "userId": {
+                    "type": "string",
+                    "description": "User ID of the uploader",
+                    "example": "One of the Patent Analyst"
+                  }
+                },
+                "required": ["excelFile"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Excel data uploaded successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Excel data uploaded successfully"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/request-otp": {
+      "post": {
+        "summary": "Request OTP for password reset",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "example": "user@example.com"
+                  }
+                },
+                "required": ["email"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OTP sent to email",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "✅ OTP sent to your email."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Email not registered",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/verify-otp": {
+      "post": {
+        "summary": "Verify OTP for password reset",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "example": "user@example.com"
+                  },
+                  "otp": {
+                    "type": "string",
+                    "example": "123456"
+                  }
+                },
+                "required": ["email", "otp"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OTP verified successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "✅ OTP verified."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or expired OTP",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "OTP not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reset-password": {
+      "post": {
+        "summary": "Reset user password",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "example": "user@example.com"
+                  },
+                  "newPassword": {
+                    "type": "string",
+                    "example": "newpassword123"
+                  }
+                },
+                "required": ["email", "newPassword"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password reset successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "✅ Password reset successful."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
+      },
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-api-key"
+      }
+    },
+    "schemas": {
+      "LoginRequest": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "example": "user@example.com",
+            "description": "User ID (email)"
+          },
+          "password": {
+            "type": "string",
+            "example": "password123"
+          },
+          "userType": {
+            "type": "string",
+            "enum": ["admin", "employee"],
+            "example": "employee",
+            "description": "User role: admin or employee"
+          }
+        },
+        "required": ["userId", "password", "userType"]
+      },
+      "LoginResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Login successful"
+          },
+          "user": {
+            "$ref": "#/components/schemas/User"
+          }
+        }
+      },
+      "SaveEmployeeRequest": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "user@example.com"
+          }
+        },
+        "required": ["email"]
+      },
+      "SaveEmployeeResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Employee details saved and email sent successfully"
+          },
+          "user": {
+            "$ref": "#/components/schemas/User"
+          }
+        }
+      },
+      "NewEmployeeRequest": {
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string",
+            "example": "Jane"
+          },
+          "lastName": {
+            "type": "string",
+            "example": "Doe"
+          },
+          "email": {
+            "type": "string",
+            "example": "newuser@example.com"
+          },
+          "contact": {
+            "type": "string",
+            "example": "+1234567890"
+          },
+          "userType": {
+            "type": "string",
+            "enum": ["admin", "employee"],
+            "example": "employee"
+          },
+          "password": {
+            "type": "string",
+            "example": "password123"
+          }
+        },
+        "required": ["firstName", "lastName", "email", "contact", "userType", "password"]
+      },
+      "NewEmployeeResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Employee details saved and email sent successfully"
+          },
+          "user": {
+            "type": "object",
+            "properties": {
+              "_id": {
+                "type": "string",
+                "example": "1"
+              },
+              "firstName": {
+                "type": "string",
+                "example": "Jane"
+              },
+              "lastName": {
+                "type": "string",
+                "example": "Doe"
+              },
+              "email": {
+                "type": "string",
+                "example": "newuser@example.com"
+              },
+              "userId": {
+                "type": "string",
+                "example": "newuser@example.com"
+              },
+              "contact": {
+                "type": "string",
+                "example": "+1234567890"
+              },
+              "userType": {
+                "type": "string",
+                "example": "employee"
+              }
+            }
+          }
+        }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string",
+            "example": "1"
+          },
+          "slNo": {
+            "type": "integer",
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "example": "John Doe"
+          },
+          "organization": {
+            "type": "string",
+            "example": "Example Corp"
+          },
+          "addressLine1": {
+            "type": "string",
+            "example": "123 Main St"
+          },
+          "addressLine2": {
+            "type": "string",
+            "example": "Apt 4B"
+          },
+          "city": {
+            "type": "string",
+            "example": "New York"
+          },
+          "state": {
+            "type": "string",
+            "example": "NY"
+          },
+          "country": {
+            "type": "string",
+            "example": "USA"
+          },
+          "zipcode": {
+            "type": "string",
+            "example": "10001"
+          },
+          "phoneNumber": {
+            "type": "string",
+            "example": "+1234567890"
+          },
+          "regCode": {
+            "type": "string",
+            "example": "REG123"
+          },
+          "agentAttorney": {
+            "type": "string",
+            "example": "Attorney"
+          },
+          "dateOfPatent": {
+            "type": "string",
+            "example": "01-01-2020"
+          },
+          "agentLicensed": {
+            "type": "string",
+            "example": "01-01-2020"
+          },
+          "firmOrOrganization": {
+            "type": "string",
+            "example": "Example Firm"
+          },
+          "updatedPhoneNumber": {
+            "type": "string",
+            "example": "+1234567890"
+          },
+          "emailAddress": {
+            "type": "string",
+            "example": "user@example.com"
+          },
+          "updatedOrganization": {
+            "type": "string",
+            "example": "Updated Corp"
+          },
+          "firmUrl": {
+            "type": "string",
+            "example": "https://example.com"
+          },
+          "updatedAddress": {
+            "type": "string",
+            "example": "456 Main St"
+          },
+          "updatedCity": {
+            "type": "string",
+            "example": "Boston"
+          },
+          "updatedState": {
+            "type": "string",
+            "example": "MA"
+          },
+          "updatedCountry": {
+            "type": "string",
+            "example": "USA"
+          },
+          "updatedZipcode": {
+            "type": "string",
+            "example": "02108"
+          },
+          "linkedInProfile": {
+            "type": "string",
+            "example": "https://linkedin.com/in/johndoe"
+          },
+          "notes": {
+            "type": "string",
+            "example": "Additional notes"
+          },
+          "initials": {
+            "type": "string",
+            "example": "JD"
+          },
+          "dataUpdatedAsOn": {
+            "type": "string",
+            "example": "01-01-2023"
+          },
+          "userId": {
+            "type": "string",
+            "example": "user@example.com"
+          },
+          "admin": {
+            "type": "string",
+            "example": "Admin Name"
+          }
+        }
+      },
+      "AddUserRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "John Doe"
+          },
+          "organization": {
+            "type": "string",
+            "example": "Example Corp"
+          },
+          "addressLine1": {
+            "type": "string",
+            "example": "123 Main St"
+          },
+          "addressLine2": {
+            "type": "string",
+            "example": "Apt 4B"
+          },
+          "city": {
+            "type": "string",
+            "example": "New York"
+          },
+          "state": {
+            "type": "string",
+            "example": "NY"
+          },
+          "country": {
+            "type": "string",
+            "example": "USA"
+          },
+          "zipcode": {
+            "type": "string",
+            "example": "10001"
+          },
+          "phoneNumber": {
+            "type": "string",
+            "example": "+1234567890"
+          },
+          "regCode": {
+            "type": "string",
+            "example": "REG123"
+          },
+          "agentAttorney": {
+            "type": "string",
+            "example": "Attorney"
+          },
+          "dateOfPatent": {
+            "type": "string",
+            "example": "01-01-2020"
+          },
+          "agentLicensed": {
+            "type": "string",
+            "example": "01-01-2020"
+          },
+          "firmOrOrganization": {
+            "type": "string",
+            "example": "Example Firm"
+          },
+          "updatedPhoneNumber": {
+            "type": "string",
+            "example": "+1234567890"
+          },
+          "emailAddress": {
+            "type": "string",
+            "example": "user@example.com"
+          },
+          "updatedOrganization": {
+            "type": "string",
+            "example": "Updated Corp"
+          },
+          "firmUrl": {
+            "type": "string",
+            "example": "https://example.com"
+          },
+          "updatedAddress": {
+            "type": "string",
+            "example": "456 Main St"
+          },
+          "updatedCity": {
+            "type": "string",
+            "example": "Boston"
+          },
+          "updatedState": {
+            "type": "string",
+            "example": "MA"
+          },
+          "updatedCountry": {
+            "type": "string",
+            "example": "USA"
+          },
+          "updatedZipcode": {
+            "type": "string",
+            "example": "02108"
+          },
+          "linkedInProfile": {
+            "type": "string",
+            "example": "https://linkedin.com/in/johndoe"
+          },
+          "notes": {
+            "type": "string",
+            "example": "Additional notes"
+          },
+          "initials": {
+            "type": "string",
+            "example": "JD"
+          },
+          "dataUpdatedAsOn": {
+            "type": "string",
+            "example": "01-01-2023"
+          },
+          "userId": {
+            "type": "string",
+            "example": "user@example.com"
+          }
+        },
+        "required": ["name", "userId"]
+      },
+      "AddUserResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "User added successfully"
+          },
+          "data": {
+            "$ref": "#/components/schemas/User"
+          }
+        }
+      },
+      "UpdateUserRequest": {
+        "type": "object",
+        "properties": {
+          "slNo": {
+            "type": "integer",
+            "example": 1
+          },
+          "regCode": {
+            "type": "string",
+            "example": "REG123"
+          },
+          "name": {
+            "type": "string",
+            "example": "John Doe"
+          },
+          "organization": {
+            "type": "string",
+            "example": "Example Corp"
+          },
+          "addressLine1": {
+            "type": "string",
+            "example": "123 Main St"
+          },
+          "addressLine2": {
+            "type": "string",
+            "example": "Apt 4B"
+          },
+          "city": {
+            "type": "string",
+            "example": "New York"
+          },
+          "state": {
+            "type": "string",
+            "example": "NY"
+          },
+          "country": {
+            "type": "string",
+            "example": "USA"
+          },
+          "zipcode": {
+            "type": "string",
+            "example": "10001"
+          },
+          "phoneNumber": {
+            "type": "string",
+            "example": "+1234567890"
+          },
+          "agentAttorney": {
+            "type": "string",
+            "example": "Attorney"
+          },
+          "dateOfPatent": {
+            "type": "string",
+            "example": "01-01-2020"
+          },
+          "agentLicensed": {
+            "type": "string",
+            "example": "01-01-2020"
+          },
+          "firmOrOrganization": {
+            "type": "string",
+            "example": "Example Firm"
+          },
+          "updatedPhoneNumber": {
+            "type": "string",
+            "example": "+1234567890"
+          },
+          "emailAddress": {
+            "type": "string",
+            "example": "user@example.com"
+          },
+          "updatedOrganization": {
+            "type": "string",
+            "example": "Updated Corp"
+          },
+          "firmUrl": {
+            "type": "string",
+            "example": "https://example.com"
+          },
+          "updatedAddress": {
+            "type": "string",
+            "example": "456 Main St"
+          },
+          "updatedCity": {
+            "type": "string",
+            "example": "Boston"
+          },
+          "updatedState": {
+            "type": "string",
+            "example": "MA"
+          },
+          "updatedCountry": {
+            "type": "string",
+            "example": "USA"
+          },
+          "updatedZipcode": {
+            "type": "string",
+            "example": "02108"
+          },
+          "linkedInProfile": {
+            "type": "string",
+            "example": "https://linkedin.com/in/johndoe"
+          },
+          "notes": {
+            "type": "string",
+            "example": "Additional notes"
+          },
+          "initials": {
+            "type": "string",
+            "example": "JD"
+          },
+          "dataUpdatedAsOn": {
+            "type": "string",
+            "example": "01-01-2023"
+          }
+        },
+        "required": ["regCode"]
+      },
+      "UpdateUserResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "User updated successfully"
+          },
+          "data": {
+            "$ref": "#/components/schemas/User"
+          }
+        }
+      },
+      "UpdateUsersResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "All users updated successfully."
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/User"
+            }
+          }
+        }
+      },
+      "FetchUsersResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Data fetched successfully"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/User"
+            }
+          }
+        }
+      },
+      "AllUsersDataResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "isUpdated": {
+                  "type": "boolean",
+                  "example": false
+                },
+                "$ref": "#/components/schemas/User"
+              }
+            }
+          },
+          "totalUsers": {
+            "type": "integer",
+            "example": 100
+          },
+          "currentPage": {
+            "type": "integer",
+            "example": 1
+          },
+          "totalPages": {
+            "type": "integer",
+            "example": 10
+          }
+        }
+      },
+      "Analysis": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string",
+            "example": "1"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "UpdatedProfile": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string",
+            "example": "1"
+          },
+          "regCode": {
+            "type": "string",
+            "example": "REG123"
+          }
+        }
+      },
+      "NewProfile": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string",
+            "example": "1"
+          },
+          "regCode": {
+            "type": "string",
+            "example": "REG123"
+          },
+          "name": {
+            "type": "string",
+            "example": "John Doe"
+          },
+          "details": {
+            "type": "object",
+            "properties": {
+              "Organization/Law Firm Name": {
+                "type": "string",
+                "example": "Example Corp"
+              },
+              "Address Line 1": {
+                "type": "string",
+                "example": "123 Main St"
+              },
+              "Address Line 2": {
+                "type": "string",
+                "example": "Apt 4B"
+              },
+              "City": {
+                "type": "string",
+                "example": "New York"
+              },
+              "State": {
+                "type": "string",
+                "example": "NY"
+              },
+              "Country": {
+                "type": "string",
+                "example": "USA"
+              },
+              "Zipcode": {
+                "type": "string",
+                "example": "10001"
+              },
+              "Phone Number": {
+                "type": "string",
+                "example": "+1234567890"
+              },
+              "Agent/Attorney": {
+                "type": "string",
+                "example": "Attorney"
+              }
+            }
+          }
+        }
+      },
+      "FormattedNewProfile": {
+        "type": "object",
+        "properties": {
+          "slNo": {
+            "type": "string",
+            "example": "1"
+          },
+          "regCode": {
+            "type": "string",
+            "example": "REG123"
+          },
+          "name": {
+            "type": "string",
+            "example": "John Doe"
+          },
+          "organization": {
+            "type": "string",
+            "example": "Example Corp"
+          },
+          "addressLine1": {
+            "type": "string",
+            "example": "123 Main St"
+          },
+          "addressLine2": {
+            "type": "string",
+            "example": "Apt 4B"
+          },
+          "city": {
+            "type": "string",
+            "example": "New York"
+          },
+          "state": {
+            "type": "string",
+            "example": "NY"
+          },
+          "country": {
+            "type": "string",
+            "example": "USA"
+          },
+          "zipcode": {
+            "type": "string",
+            "example": "10001"
+          },
+          "phoneNumber": {
+            "type": "string",
+            "example": "+1234567890"
+          },
+          "agentAttorney": {
+            "type": "string",
+            "example": "Attorney"
+          }
+        }
+      },
+      "FormattedRemovedProfile": {
+        "type": "object",
+        "properties": {
+          "slNo": {
+            "type": "string",
+            "example": "1"
+          },
+          "regCode": {
+            "type": "string",
+            "example": "REG123"
+          },
+          "name": {
+            "type": "string",
+            "example": "John Doe"
+          },
+          "organization": {
+            "type": "string",
+            "example": "Example Corp"
+          },
+          "addressLine1": {
+            "type": "string",
+            "example": "123 Main St"
+          },
+          "city": {
+            "type": "string",
+            "example": "New York"
+          },
+          "state": {
+            "type": "string",
+            "example": "NY"
+          },
+          "country": {
+            "type": "string",
+            "example": "USA"
+          },
+          "zipcode": {
+            "type": "string",
+            "example": "10001"
+          },
+          "phoneNumber": {
+            "type": "string",
+            "example": "+1234567890"
+          },
+          "agentAttorney": {
+            "type": "string",
+            "example": "Attorney"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "example": "Invalid input"
+          }
+        }
+      },
+      "UnauthorizedResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Invalid credentials"
+          }
+        }
+      },
+      "NotFoundResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "Resource not found"
+          }
+        }
+      },
+      "ServerErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "example": "An error occurred"
+          },
+          "details": {
+            "type": "string",
+            "example": "Error message"
+          }
+        }
+      }
+    }
+  }
+}
