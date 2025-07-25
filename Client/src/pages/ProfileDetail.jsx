@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { HiOutlineX } from 'react-icons/hi';
 import {
   HiOutlinePhone,
   HiOutlineMail,
@@ -8,6 +9,7 @@ import {
   HiOutlineGlobe,
   HiOutlineLocationMarker
 } from 'react-icons/hi';
+import ErrorModal from '../components/Home/ErrorModel'; // Adjust the import path as necessary
 
 function ProfileDetail() {
   const { id } = useParams();
@@ -15,6 +17,7 @@ function ProfileDetail() {
   const [profile, setProfile] = useState(null);
   const [error, setError] = useState('');
   const API_URL = import.meta.env.VITE_API_URL;
+  
 
   useEffect(() => {
     async function fetchProfile() {
@@ -31,7 +34,13 @@ function ProfileDetail() {
     fetchProfile();
   }, [id]);
 
-  if (error) return <p className="text-red-500 text-center mt-8">{error}</p>;
+  // if (error) return <p className="text-red-500 text-center bg-white">{error}</p>;
+if (error) {
+    return (
+      <ErrorModal error={error} onClose={() => setShowModal(false)} />
+    );
+  }
+
   if (!profile) return <p className="text-center mt-8">Loading...</p>;
 
   return (
@@ -115,7 +124,9 @@ function ProfileDetail() {
             {Object.entries(profile).map(([key, value], i) =>
               value && typeof value === 'string' && key !== '_id' && key !== 'biography' && key !== 'notes' && key !== 'admin' && key !== 'userId' && (
                 <div key={i} className="bg-gray-50 border border-gray-100 p-3 rounded">
-                  <strong className="capitalize">{key.replace(/([A-Z])/g, ' $1')}:</strong> {value}
+                  {/* <strong className="capitalize">{key.replace(/([A-Z])/g, ' $1')}:</strong> {value} */}
+                  <strong className="capitalize">{key === 'regCode' ? 'Registration Number' : key.replace(/([A-Z])/g, ' $1')}:
+                    </strong>{' '}{value}
                 </div>
               )
             )}

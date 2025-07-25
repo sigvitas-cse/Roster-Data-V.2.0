@@ -17,10 +17,9 @@ function BigDataPage() {
   const suggestionPanelRef = useRef(null);
   const inputRef = useRef(null);
   const navigate = useNavigate();
-
   const location = useLocation();
 
-   useEffect(() => {
+  useEffect(() => {
     const params = new URLSearchParams(location.search);
     params.set('query', searchQuery);
     params.set('page', currentPage);
@@ -29,39 +28,39 @@ function BigDataPage() {
 
   const API_URL = import.meta.env.VITE_API_URL;
 
-const fetchData = async (query = '', page = 1, field = '', limit = 20) => {
-  try {
-    const url = `${API_URL}/api/FullDataAccess?query=${encodeURIComponent(query)}${field ? `&field=${field}` : ''}&page=${page}&limit=${limit}`;
-    const response = await axios.get(url, {
-      headers: { 'x-auth-token': localStorage.getItem('token') },
-    });
-    if (response.data.results && response.data.totalCount !== undefined) {
-      setData(response.data.results);
-      setTotalCount(response.data.totalCount);
-      setCurrentPage(page);
-      setError('');
-    } else {
+  const fetchData = async (query = '', page = 1, field = '', limit = 20) => {
+    try {
+      const url = `${API_URL}/api/FullDataAccess?query=${encodeURIComponent(query)}${field ? `&field=${field}` : ''}&page=${page}&limit=${limit}`;
+      const response = await axios.get(url, {
+        headers: { 'x-auth-token': localStorage.getItem('token') },
+      });
+      if (response.data.results && response.data.totalCount !== undefined) {
+        setData(response.data.results);
+        setTotalCount(response.data.totalCount);
+        setCurrentPage(page);
+        setError('');
+      } else {
+        setData([]);
+        setTotalCount(0);
+        setError(response.data.message || 'No data available.');
+      }
+    } catch (err) {
+      console.error('❌ Fetch error:', {
+        message: err.response ? err.response.data.message : err.message,
+        status: err.response ? err.response.status : 'No response',
+        query,
+        field,
+      });
+      setError('Server error. Please try again.');
       setData([]);
       setTotalCount(0);
-      setError(response.data.message || 'No data available.');
+      if (err.response && err.response.status === 401) {
+        toast.error('Authentication failed. Please log in again.', { position: 'top-center' });
+        localStorage.removeItem('token');
+        navigate('/explore', { replace: true });
+      }
     }
-  } catch (err) {
-    console.error('❌ Fetch error:', {
-      message: err.response ? err.response.data.message : err.message,
-      status: err.response ? err.response.status : 'No response',
-      query,
-      field,
-    });
-    setError('Server error. Please try again.');
-    setData([]);
-    setTotalCount(0);
-    if (err.response && err.response.status === 401) {
-      toast.error('Authentication failed. Please log in again.', { position: 'top-center' });
-      localStorage.removeItem('token');
-      navigate('/explore', { replace: true });
-    }
-  }
-};
+  };
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -77,79 +76,45 @@ const fetchData = async (query = '', page = 1, field = '', limit = 20) => {
     fetchData(queryFromUrl, pageFromUrl); // Fetch data based on URL params
   }, [navigate, location]);
 
-
-const handleSearch = async (e) => {
-  if (e?.preventDefault) e.preventDefault();
-  if (!searchQuery.trim()) {
-    toast.error('Please enter a search query', { position: 'top-center' });
-    return;
-  }
-  const queries = searchQuery.split(',').map(q => q.trim()).filter(Boolean);
-  if (queries.length > 5) {
-    toast.error('Multiple search allows up to 5 entries.', { position: 'top-center' });
-    return;
-  }
-  try {
-    const results = [];
-    for (const query of queries) {
-      if (query.length < 1) {
-        toast.warn(`Query "${query}" is too short. Minimum 2 characters required.`, { position: 'top-center' });
-        continue;
-      }
-      const response = await axios.get(`${API_URL}/api/IndivisualDataFetching`, {
-        params: { query, field: detectedFields[0] || 'name' },
-        headers: { 'x-auth-token': localStorage.getItem('token') },
-      });
-      if (Array.isArray(response.data.results) && response.data.results.length > 0) {
-        results.push(...response.data.results);
-      }
-      setTotalCount(response.data.total || 0);
+  const handleSearch = async (e) => {
+    if (e?.preventDefault) e.preventDefault();
+    if (!searchQuery.trim()) {
+      toast.error('Please enter a search query', { position: 'top-center' });
+      return;
     }
-    setData(results);
-    setError(results.length === 0 ? 'No matching profiles found.' : '');
-    setSuggestions({});
-    setIsInputFocused(false);
-    if (inputRef.current) inputRef.current.blur();
-    // Reset currentPage to 1 and update URL manually
-    const newPage = 1;
-    setCurrentPage(newPage);
-    const params = new URLSearchParams(location.search);
-    params.set('query', searchQuery.trim());
-    params.set('page', newPage);
-    window.history.replaceState({}, '', `${location.pathname}?${params.toString()}`);
-    fetchData(searchQuery.trim(), newPage, detectedFields[0] || ''); // Fetch first page of new search
-  } catch (err) {
-    console.error('❌ Search error:', err.response ? err.response.data : err.message);
-    toast.error('Server error occurred. Please try again.', { position: 'top-center' });
-    setData([]);
-    setTotalCount(0);
-  }
-};
-
-// Calculate total pages based on totalCount
-const totalPages = Math.ceil(totalCount / 20);
-
-// In the pagination section, ensure to use totalPages
-{Array.from({ length: totalPages }, (_, i) => i + 1).slice(
-  Math.max(0, currentPage - 3),
-  Math.min(totalPages, currentPage + 2)
-).map((page) => (
-  <button
-    key={page}
-    onClick={() => {
-      fetchData(searchQuery.trim(), page, detectedFields[0] || '');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }}
-    className={`flex items-center justify-center w-10 h-10 rounded-full ${page === currentPage
-      ? 'bg-blue-700 text-white'
-      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-    } font-semibold text-sm transition-all duration-200 ease-in-out shadow-md hover:shadow-lg`}
-    aria-label={`Go to page ${page}`}
-  >
-    {page}
-  </button>
-))}
-
+    const queries = searchQuery.split(',').map(q => q.trim()).filter(Boolean);
+    if (queries.length > 5) {
+      toast.error('Multiple search allows up to 5 entries.', { position: 'top-center' });
+      return;
+    }
+    try {
+      const results = [];
+      for (const query of queries) {
+        if (query.length < 1) {
+          toast.warn(`Query "${query}" is too short. Minimum 2 characters required.`, { position: 'top-center' });
+          continue;
+        }
+        const response = await axios.get(`${API_URL}/api/IndivisualDataFetching`, {
+          params: { query, field: detectedFields[0] || 'name' },
+          headers: { 'x-auth-token': localStorage.getItem('token') },
+        });
+        if (Array.isArray(response.data.results) && response.data.results.length > 0) {
+          results.push(...response.data.results);
+        }
+        setTotalCount(response.data.total || 0);
+      }
+      setData(results);
+      setError(results.length === 0 ? 'No matching profiles found.' : '');
+      setSuggestions({});
+      setIsInputFocused(false);
+      if (inputRef.current) inputRef.current.blur();
+    } catch (err) {
+      console.error('❌ Search error:', err.response ? err.response.data : err.message);
+      toast.error('Server error occurred. Please try again.', { position: 'top-center' });
+      setData([]);
+      setTotalCount(0);
+    }
+  };
 
   const handleSuggestionSearch = async (term, field) => {
     try {
@@ -284,16 +249,16 @@ const totalPages = Math.ceil(totalCount / 20);
   };
 
   const handleNext = () => {
-  if ((currentPage * 20) < totalCount) {
-    fetchData(searchQuery.trim(), currentPage + 1, detectedFields[0] || '');
-  }
-};
+    if ((currentPage * 20) < totalCount) {
+      fetchData(searchQuery.trim(), currentPage + 1, detectedFields[0] || '');
+    }
+  };
 
-const handlePrevious = () => {
-  if (currentPage > 1) {
-    fetchData(searchQuery.trim(), currentPage - 1, detectedFields[0] || '');
-  }
-};
+  const handlePrevious = () => {
+    if (currentPage > 1) {
+      fetchData(searchQuery.trim(), currentPage - 1, detectedFields[0] || '');
+    }
+  };
 
   const handleLogout = async () => {
     await fetch(`${API_URL}/api/guiestlogout`, {
@@ -547,71 +512,70 @@ const handlePrevious = () => {
           ))}
         </div>
 
-<div className="flex justify-center items-center gap-2 mt-6">
-  <button
-    onClick={handlePrevious}
-    disabled={currentPage <= 1}
-    className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 ease-in-out shadow-md hover:shadow-lg"
-    aria-label="Previous page"
-  >
-    <svg
-      className="w-5 h-5"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="2"
-        d="M15 19l-7-7 7-7"
-      />
-    </svg>
-  </button>
+        <div className="flex justify-center items-center gap-2 mt-6">
+          <button
+            onClick={handlePrevious}
+            disabled={currentPage <= 1}
+            className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 ease-in-out shadow-md hover:shadow-lg"
+            aria-label="Previous page"
+          >
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+          </button>
 
-  {/* Dynamic Page Number Buttons */}
-  {Array.from({ length: Math.ceil(totalCount / 20) }, (_, i) => i + 1).slice(
-    Math.max(0, currentPage - 3),
-    Math.min(Math.ceil(totalCount / 20), currentPage + 2)
-  ).map((page) => (
-    <button
-      key={page}
-      onClick={() => {
-        fetchData(searchQuery.trim(), page, detectedFields[0] || '');
-        window.scrollTo({ top: 0, behavior: 'smooth' }); // Scroll to top smoothly
-      }}
-      className={`flex items-center justify-center w-10 h-10 rounded-full ${page === currentPage
-        ? 'bg-blue-700 text-white'
-        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-      } font-semibold text-sm transition-all duration-200 ease-in-out shadow-md hover:shadow-lg`}
-      aria-label={`Go to page ${page}`}
-    >
-      {page}
-    </button>
-  ))}
+          {Array.from({ length: Math.ceil(totalCount / 20) }, (_, i) => i + 1).slice(
+            Math.max(0, currentPage - 3),
+            Math.min(Math.ceil(totalCount / 20), currentPage + 2)
+          ).map((page) => (
+            <button
+              key={page}
+              onClick={() => {
+                fetchData(searchQuery.trim(), page, detectedFields[0] || '');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className={`flex items-center justify-center w-10 h-10 rounded-full ${page === currentPage
+                ? 'bg-blue-700 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              } font-semibold text-sm transition-all duration-200 ease-in-out shadow-md hover:shadow-lg`}
+              aria-label={`Go to page ${page}`}
+            >
+              {page}
+            </button>
+          ))}
 
-  <button
-    onClick={handleNext}
-    className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 transition-all duration-200 ease-in-out shadow-md hover:shadow-lg"
-    aria-label="Next page"
-  >
-    <svg
-      className="w-5 h-5"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="2"
-        d="M9 5l7 7-7 7"
-      />
-    </svg>
-  </button>
-</div>
+          <button
+            onClick={handleNext}
+            className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 transition-all duration-200 ease-in-out shadow-md hover:shadow-lg"
+            aria-label="Next page"
+          >
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
   );

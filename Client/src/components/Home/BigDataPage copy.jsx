@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { HiOutlineMail, HiOutlinePhone, HiOutlineOfficeBuilding, HiOutlineIdentification, HiOutlineSearch, HiOutlineX } from 'react-icons/hi';
 import axios from 'axios';
 import { toast } from 'react-toastify';
@@ -17,6 +17,15 @@ function BigDataPage() {
   const suggestionPanelRef = useRef(null);
   const inputRef = useRef(null);
   const navigate = useNavigate();
+
+  const location = useLocation();
+
+   useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    params.set('query', searchQuery);
+    params.set('page', currentPage);
+    window.history.replaceState({}, '', `${location.pathname}?${params.toString()}`);
+  }, [searchQuery, currentPage, location]);
 
   const API_URL = import.meta.env.VITE_API_URL;
 
