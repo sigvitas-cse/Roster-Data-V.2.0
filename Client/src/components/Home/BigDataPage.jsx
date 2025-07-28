@@ -7,6 +7,7 @@ import { toast } from 'react-toastify';
 function BigDataPage() {
   const [data, setData] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
+  const [totalCount2, setTotalCount2] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -29,6 +30,26 @@ function BigDataPage() {
 
   const API_URL = import.meta.env.VITE_API_URL;
 
+ const totaldbCount = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/api/totaldbcount`, {
+      headers: { 'x-auth-token': localStorage.getItem('token') },
+    });
+    
+    // Access count from the backend's response
+    const count = response.data.count;
+    setTotalCount2(count);
+
+    console.log('Total DB Count:', count);
+
+    // Optionally, set it to a state
+    // setTotalCount(count); // if using React state
+  } catch (error) {
+    console.error('Error fetching DB count:', error.message);
+  }
+};
+
+ 
 const fetchData = async (query = '', page = 1, field = '', limit = 20) => {
   try {
     const url = `${API_URL}/api/FullDataAccess?query=${encodeURIComponent(query)}${field ? `&field=${field}` : ''}&page=${page}&limit=${limit}`;
@@ -75,6 +96,7 @@ const fetchData = async (query = '', page = 1, field = '', limit = 20) => {
     setSearchQuery(queryFromUrl);
     setCurrentPage(pageFromUrl);
     fetchData(queryFromUrl, pageFromUrl); // Fetch data based on URL params
+    totaldbCount();
   }, [navigate, location]);
 
 
@@ -450,7 +472,7 @@ const handlePrevious = () => {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 py-6 border border-gray-100 bg-white">
-        <p className="text-sm font-medium mb-4">Total Records: {totalCount}</p>
+        <p className="text-sm font-medium mb-4">Total Records: {totalCount2}</p>
         {error && <p className="bg-red-100 border-l-4 border-red-400 text-red-700 p-3 rounded-md text-sm mb-4">{error}</p>}
 
         <div className="bg-white shadow-sm border border-gray-100 p-4 rounded-xl mb-6 flex flex-wrap justify-between items-center text-sm text-slate-700">

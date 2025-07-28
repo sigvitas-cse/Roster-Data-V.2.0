@@ -287,4 +287,14 @@ router.get('/profile/:id', async (req, res) => {
   }
 });
 
+router.get('/totaldbcount',async(req, res) =>{
+  try{
+    const totaldbcount = await UserModel.countDocuments();
+    res.status(200).json({ count: totaldbcount });
+  }catch(error){
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+
+});
+
 module.exports = router;
