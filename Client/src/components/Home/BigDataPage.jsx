@@ -570,6 +570,30 @@ const handlePrevious = () => {
         </div>
 
 <div className="flex justify-center items-center gap-2 mt-6">
+<button
+    onClick={() => {
+      fetchData(searchQuery.trim(), 1, detectedFields[0] || '');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }}
+    disabled={currentPage <= 1}
+    className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 ease-in-out shadow-md hover:shadow-lg"
+    aria-label="First page"
+  >
+    <svg
+      className="w-5 h-5"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+      />
+    </svg>
+  </button>
   <button
     onClick={handlePrevious}
     disabled={currentPage <= 1}
@@ -630,6 +654,31 @@ const handlePrevious = () => {
         strokeLinejoin="round"
         strokeWidth="2"
         d="M9 5l7 7-7 7"
+      />
+    </svg>
+  </button>
+  <button
+    onClick={() => {
+      const lastPage = Math.ceil(totalCount / 20);
+      fetchData(searchQuery.trim(), lastPage, detectedFields[0] || '');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }}
+    disabled={currentPage >= Math.ceil(totalCount / 20)}
+    className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 ease-in-out shadow-md hover:shadow-lg"
+    aria-label="Last page"
+  >
+    <svg
+      className="w-5 h-5"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="M5 19l7-7-7-7m8 14l7-7-7-7"
       />
     </svg>
   </button>
