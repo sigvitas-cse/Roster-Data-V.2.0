@@ -106,7 +106,7 @@ const Explore = () => {
   };
 
   const copyToClipboard = (profile) => {
-    const contactDetails = `Name: ${profile.name}\nOrganization: ${profile.organization}\nPhone: ${profile.phoneNumber}\nEmail: ${profile.emailAddress}\nAddress: ${profile.addressLine1}${profile.addressLine2 ? ', ' + profile.addressLine2 : ''}, ${profile.city}, ${profile.state}, ${profile.country}, ${profile.zipcode}\nReg No.: ${profile.regCode}`.trim();
+    const contactDetails = `Name: ${profile.name}\nOrganization: ${profile.organization}\nPhone: ${profile.phoneNumber}\nEmail: ${profile.emailAddress}\nAddress: ${profile.addressLine1}${profile.addressLine2 ? ', ' + profile.addressLine2 : ''}, ${profile.city}, ${profile.state}, ${profile.country}, ${profile.zipcode}`.trim();
     navigator.clipboard.writeText(contactDetails)
       .then(() => {
         toast.success(`✔️ Contact info for "${profile.name}" copied!`, {
