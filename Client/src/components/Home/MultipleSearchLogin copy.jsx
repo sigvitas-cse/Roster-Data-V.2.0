@@ -11,6 +11,7 @@ const MultipleSearchLogin = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
   const API_URL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
@@ -19,46 +20,6 @@ const MultipleSearchLogin = () => {
     if (localStorage.getItem('token')) {
       navigate('/explore');
     }
-
-    // Inactivity timer setup
-    let inactivityTimer;
-    const resetInactivityTimer = () => {
-      clearTimeout(inactivityTimer);
-      inactivityTimer = setTimeout(async () => {
-        if (localStorage.getItem('token')) {
-          try {
-            await axios.post(
-              `${API_URL}/api/guiestlogout`,
-              { reason: 'inactive for 5 minutes' },
-              { headers: { 'x-auth-token': localStorage.getItem('token') } }
-            );
-            localStorage.removeItem('token');
-            localStorage.removeItem('userId');
-            localStorage.removeItem('userType');
-            toast.info('Logged out due to 5 minutes of inactivity.', { position: 'top-center' });
-            navigate('/MultipleSearchLogin');
-          } catch (err) {
-            console.error('Auto-logout error:', err);
-            toast.error('Error during auto-logout.', { position: 'top-center' });
-          }
-        }
-      }, 5 * 60 * 1000); // 5 minutes
-    };
-
-    // Add event listeners for user activity
-    const handleUserActivity = () => resetInactivityTimer();
-    window.addEventListener('mousemove', handleUserActivity);
-    window.addEventListener('keydown', handleUserActivity);
-    window.addEventListener('click', handleUserActivity);
-
-    resetInactivityTimer(); // Start timer on mount
-
-    return () => {
-      clearTimeout(inactivityTimer);
-      window.removeEventListener('mousemove', handleUserActivity);
-      window.removeEventListener('keydown', handleUserActivity);
-      window.removeEventListener('click', handleUserActivity);
-    };
   }, [navigate]);
 
   const togglePasswordVisibility = () => {
@@ -67,19 +28,23 @@ const MultipleSearchLogin = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+
     if (!userId || !password) {
       toast.error('Please enter both User ID and Password', { position: 'top-center' });
       return;
     }
+
     setLoading(true);
     const email = userId;
 
     try {
-      const userAgent = navigator.userAgent; // Capture user-agent
-      const response = await axios.post(
-        `${API_URL}/api/guiestlogin`,
-        { email, password, userAgent },
-        { headers: { 'Content-Type': 'application/json' } }
+      const response = await axios.post(`${API_URL}/api/guiestlogin`, 
+        {
+          email, password 
+        },
+        {
+          headers: { 'Content-Type': 'application/json' },
+        }
       );
 
       if (response.status === 200) {
@@ -102,6 +67,7 @@ const MultipleSearchLogin = () => {
 
   return (
     <div className="bg-gradient-to-b from-[#F8FAFC] to-[#E2E8F0] text-[#1E293B] flex flex-col font-['Inter',sans-serif] relative overflow-hidden min-h-screen">
+      {/* Background Decoration */}
       <div className="absolute inset-0">
         <svg className="w-full h-full opacity-10" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 720">
           <path
@@ -111,12 +77,15 @@ const MultipleSearchLogin = () => {
         </svg>
         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#E2E8F0]/50" />
       </div>
+
+      {/* Main Content */}
       <main className="relative z-10 flex items-center justify-center min-h-[calc(100vh-204px)]">
         <div className="w-full max-w-md px-4 sm:px-6 py-10 sm:py-12">
           <div className="bg-white p-8 sm:p-10 rounded-xl shadow-lg border border-[#E2E8F0] transition-all duration-300 hover:shadow-xl">
             <h3 className="text-3xl sm:text-4xl font-bold text-center mb-8 text-[#1E293B]">
               Data Portal
             </h3>
+
             <form onSubmit={handleLogin} className="space-y-6">
               <div>
                 <label htmlFor="userId" className="block text-base font-medium mb-2">
@@ -132,6 +101,7 @@ const MultipleSearchLogin = () => {
                   className="w-full p-3 rounded-lg text-base bg-[#F8FAFC] text-[#1E293B] border border-[#CBD5E1] focus:outline-none focus:ring-2 focus:ring-[#38BDF8] focus:border-[#38BDF8] placeholder:text-[#64748B]"
                 />
               </div>
+
               <div>
                 <label htmlFor="password" className="block text-base font-medium mb-2">
                   Password
@@ -152,11 +122,14 @@ const MultipleSearchLogin = () => {
                   />
                 </div>
               </div>
+
               <button
                 type="submit"
                 disabled={loading}
                 className={`w-full p-3 bg-gradient-to-r from-[#38BDF8] to-[#60A5FA] text-white text-base font-semibold rounded-lg transition-all duration-200 shadow-md focus:outline-none focus:ring-2 focus:ring-[#38BDF8] ${
-                  loading ? 'bg-[#CBD5E1] cursor-not-allowed' : 'hover:from-[#2B9FE7] hover:to-[#4B8EF1] hover:shadow-lg'
+                  loading
+                    ? 'bg-[#CBD5E1] cursor-not-allowed'
+                    : 'hover:from-[#2B9FE7] hover:to-[#4B8EF1] hover:shadow-lg'
                 }`}
               >
                 {loading ? 'Logging in...' : 'Log In'}

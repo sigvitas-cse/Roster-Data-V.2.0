@@ -6,7 +6,6 @@ const GuestLogin = require('../models/guiestlogin');
 const Data = require('../models/NewProfile');
 const auth = require('../middleware/auth');
 const { check, validationResult } = require('express-validator');
-const mongoose = require('mongoose'); // Import mongoose
 
 // @route   POST api/guiestlogin
 // @desc    Authenticate guest user and get token
@@ -37,32 +36,23 @@ router.post(
         return res.status(400).json({ message: 'Invalid Credentials' });
       }
 
-      const now = new Date();
-      // Check for existing login in the last 5 seconds to prevent duplicates
-      const isDuplicateLogin = user.activityLog.some(activity => {
-        const activityTimestamp = activity.timestamp instanceof Date
-          ? activity.timestamp
-          : new Date(activity.timestamp?.$date || activity.timestamp);
-        return activity.action === 'login' && Math.abs(activityTimestamp - now) < 5000;
+      // Update user with userAgent, sessionData, and activityLog
+      user.userAgent = userAgent;
+      user.sessionData.push({
+        loginTime: new Date(),
+        logoutTime: null,
+        logoutReason: null,
+      });
+      user.activityLog.push({
+        action: 'login',
+        details: { userAgent },
+        timestamp: new Date(),
       });
 
-      if (!isDuplicateLogin) {
-        user.userAgent = userAgent;
-        user.sessionData.push({
-          loginTime: now,
-          logoutTime: null,
-          logoutReason: null,
-        });
-        user.activityLog.push({
-          action: 'login',
-          details: { userAgent },
-          timestamp: now,
-        });
-      }
-
+      // Debug existing activityLog
       console.log('Before save - activityLog:', user.activityLog);
+
       await user.save({ validateModifiedOnly: true });
-      console.log('After save - activityLog:', user.activityLog);
 
       const payload = {
         userId: user._id,
@@ -100,33 +90,17 @@ router.post('/guiestlogout', auth, async (req, res) => {
     const { reason } = req.body;
     const lastSession = user.sessionData[user.sessionData.length - 1];
     if (lastSession && !lastSession.logoutTime) {
-      const now = new Date();
-      // Check for existing logout in the last 5 seconds
-      const isDuplicateLogout = user.activityLog.some(activity => {
-        const activityTimestamp = activity.timestamp instanceof Date
-          ? activity.timestamp
-          : new Date(activity.timestamp?.$date || activity.timestamp);
-        return activity.action === 'logout' && Math.abs(activityTimestamp - now) < 5000;
+      lastSession.logoutTime = new Date();
+      lastSession.logoutReason = reason || 'Manual logout';
+      user.activityLog.push({
+        action: 'logout',
+        details: { reason: reason || 'Manual logout' },
+        timestamp: new Date(),
       });
-
-      if (!isDuplicateLogout) {
-        lastSession.logoutTime = now;
-        lastSession.logoutReason = reason || 'Manual logout';
-        user.activityLog.push({
-          action: 'logout',
-          details: { reason: reason || 'Manual logout' },
-          timestamp: now,
-        });
-      }
-
-      console.log('Before save - activityLog:', user.activityLog);
       await user.save({ validateModifiedOnly: true });
-      console.log('After save - activityLog:', user.activityLog);
-
-      res.json({ message: 'Logged out successfully' });
-    } else {
-      res.status(400).json({ message: 'No active session to logout' });
     }
+
+    res.json({ message: 'Logged out successfully' });
   } catch (err) {
     console.error('Logout error:', err.message);
     res.status(500).json({ message: 'Server Error' });
@@ -137,62 +111,40 @@ router.post('/guiestlogout', auth, async (req, res) => {
 // @desc    Log page visit
 // @access  Private
 router.post('/log-page-visit', auth, async (req, res) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
   try {
-    const user = await GuestLogin.findById(req.user.userId).session(session);
+    const user = await GuestLogin.findById(req.user.userId);
     if (!user) {
-      await session.abortTransaction();
       return res.status(404).json({ message: 'User not found' });
     }
 
     const { page, currentPage } = req.body;
     if (!page) {
-      await session.abortTransaction();
       return res.status(400).json({ message: 'Page is required' });
     }
 
-    const now = new Date();
-    // Fetch the latest committed state within the transaction
-    const latestUser = await GuestLogin.findById(req.user.userId).session(session);
-    console.log('Latest user activityLog before check:', latestUser.activityLog);
-    const isDuplicateVisit = latestUser.activityLog.some(activity => {
-      const activityTimestamp = activity.timestamp instanceof Date
-        ? activity.timestamp
-        : new Date(activity.timestamp?.$date || activity.timestamp);
-      return activity.action === 'page_visit' && activity.details.page === page &&
-             Math.abs(activityTimestamp - now) < 5000; // 5-second tolerance
+    user.pageVisits.push({
+      page,
+      timestamp: new Date(),
+    });
+    user.activityLog.push({
+      action: 'page_visit',
+      page: currentPage || user.currentPage,
+      details: { page },
+      timestamp: new Date(),
     });
 
-    if (!isDuplicateVisit) {
-      user.pageVisits.push({
-        page,
-        timestamp: now,
-      });
-      user.activityLog.push({
-        action: 'page_visit',
-        page: currentPage || user.currentPage,
-        details: { page },
-        timestamp: now,
-      });
-    } else {
-      console.log(`Duplicate page visit detected for page ${page}, skipping log`);
+    if (currentPage) {
+      user.currentPage = currentPage;
+      if (currentPage > user.maxPageReached) {
+        user.maxPageReached = currentPage;
+      }
     }
-
-    console.log('Before save - activityLog:', user.activityLog);
-    await user.save({ session, validateModifiedOnly: true });
-
-    await session.commitTransaction();
-    console.log('After save - activityLog:', user.activityLog);
+    await user.save({ validateModifiedOnly: true });
 
     res.json({ message: 'Page visit logged' });
   } catch (err) {
-    await session.abortTransaction();
     console.error('Page visit log error:', err.message);
     res.status(500).json({ message: 'Server Error' });
-  } finally {
-    session.endSession();
   }
 });
 
@@ -211,33 +163,18 @@ router.post('/log-search', auth, async (req, res) => {
       return res.status(400).json({ message: 'Query and field are required' });
     }
 
-    const now = new Date();
-    // Check for existing search in the last 1 second
-    const isDuplicateSearch = user.activityLog.some(activity => {
-      const activityTimestamp = activity.timestamp instanceof Date
-        ? activity.timestamp
-        : new Date(activity.timestamp?.$date || activity.timestamp);
-      return activity.action === 'search' && activity.details.query === query && activity.details.field === field &&
-             Math.abs(activityTimestamp - now) < 1000;
+    user.searches.push({
+      query,
+      field,
+      timestamp: new Date(),
     });
-
-    if (!isDuplicateSearch) {
-      user.searches.push({
-        query,
-        field,
-        timestamp: now,
-      });
-      user.activityLog.push({
-        action: 'search',
-        page: user.currentPage,
-        details: { query, field },
-        timestamp: now,
-      });
-    }
-
-    console.log('Before save - activityLog:', user.activityLog);
+    user.activityLog.push({
+      action: 'search',
+      page: user.currentPage,
+      details: { query, field },
+      timestamp: new Date(),
+    });
     await user.save({ validateModifiedOnly: true });
-    console.log('After save - activityLog:', user.activityLog);
 
     res.json({ message: 'Search logged' });
   } catch (err) {
@@ -261,33 +198,18 @@ router.post('/log-copy', auth, async (req, res) => {
       return res.status(400).json({ message: 'Name and regCode are required' });
     }
 
-    const now = new Date();
-    // Check for existing copy action in the last 1 second
-    const isDuplicateCopy = user.activityLog.some(activity => {
-      const activityTimestamp = activity.timestamp instanceof Date
-        ? activity.timestamp
-        : new Date(activity.timestamp?.$date || activity.timestamp);
-      return activity.action === 'copy' && activity.details.name === name && activity.details.regCode === regCode &&
-             Math.abs(activityTimestamp - now) < 1000;
+    user.copyActions.push({
+      name,
+      regCode,
+      timestamp: new Date(),
     });
-
-    if (!isDuplicateCopy) {
-      user.copyActions.push({
-        name,
-        regCode,
-        timestamp: now,
-      });
-      user.activityLog.push({
-        action: 'copy',
-        page: user.currentPage,
-        details: { name, regCode },
-        timestamp: now,
-      });
-    }
-
-    console.log('Before save - activityLog:', user.activityLog);
+    user.activityLog.push({
+      action: 'copy',
+      page: user.currentPage,
+      details: { name, regCode },
+      timestamp: new Date(),
+    });
     await user.save({ validateModifiedOnly: true });
-    console.log('After save - activityLog:', user.activityLog);
 
     res.json({ message: 'Copy action logged' });
   } catch (err) {

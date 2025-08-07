@@ -7,6 +7,7 @@ import { toast } from 'react-toastify';
 function BigDataPage() {
   const [data, setData] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
+  const [totalCount2, setTotalCount2] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -29,6 +30,26 @@ function BigDataPage() {
 
   const API_URL = import.meta.env.VITE_API_URL;
 
+ const totaldbCount = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/api/totaldbcount`, {
+      headers: { 'x-auth-token': localStorage.getItem('token') },
+    });
+    
+    // Access count from the backend's response
+    const count = response.data.count;
+    setTotalCount2(count);
+
+    console.log('Total DB Count:', count);
+
+    // Optionally, set it to a state
+    // setTotalCount(count); // if using React state
+  } catch (error) {
+    console.error('Error fetching DB count:', error.message);
+  }
+};
+
+ 
 const fetchData = async (query = '', page = 1, field = '', limit = 20) => {
   try {
     const url = `${API_URL}/api/FullDataAccess?query=${encodeURIComponent(query)}${field ? `&field=${field}` : ''}&page=${page}&limit=${limit}`;
@@ -63,63 +84,94 @@ const fetchData = async (query = '', page = 1, field = '', limit = 20) => {
   }
 };
 
-useEffect(() => {
-  const token = localStorage.getItem('token');
-  if (!token) {
-    navigate('/explore', { replace: true });
-    return;
-  }
-  fetchData('', 1); // Initial fetch with empty query to show all data (first page)
-}, [navigate]);
-
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
       navigate('/explore', { replace: true });
       return;
     }
-    fetchData(''); // Initial fetch with empty query to get all data (first page)
-  }, [navigate]);
+    const params = new URLSearchParams(location.search);
+    const pageFromUrl = parseInt(params.get('page')) || 1;
+    const queryFromUrl = params.get('query') || '';
+    setSearchQuery(queryFromUrl);
+    setCurrentPage(pageFromUrl);
+    fetchData(queryFromUrl, pageFromUrl); // Fetch data based on URL params
+    totaldbCount();
+  }, [navigate, location]);
 
-  const handleSearch = async (e) => {
-    if (e?.preventDefault) e.preventDefault();
-    if (!searchQuery.trim()) {
-      toast.error('Please enter a search query', { position: 'top-center' });
-      return;
-    }
-    const queries = searchQuery.split(',').map(q => q.trim()).filter(Boolean);
-    if (queries.length > 5) {
-      toast.error('Multiple search allows up to 5 entries.', { position: 'top-center' });
-      return;
-    }
-    try {
-      const results = [];
-      for (const query of queries) {
-        if (query.length < 1) {
-          toast.warn(`Query "${query}" is too short. Minimum 2 characters required.`, { position: 'top-center' });
-          continue;
-        }
-        const response = await axios.get(`${API_URL}/api/IndivisualDataFetching`, {
-          params: { query, field: detectedFields[0] || 'name' },
-          headers: { 'x-auth-token': localStorage.getItem('token') },
-        });
-        if (Array.isArray(response.data.results) && response.data.results.length > 0) {
-          results.push(...response.data.results);
-        }
-        setTotalCount(response.data.total || 0);
+
+const handleSearch = async (e) => {
+  if (e?.preventDefault) e.preventDefault();
+  if (!searchQuery.trim()) {
+    toast.error('Please enter a search query', { position: 'top-center' });
+    return;
+  }
+  const queries = searchQuery.split(',').map(q => q.trim()).filter(Boolean);
+  if (queries.length > 5) {
+    toast.error('Multiple search allows up to 5 entries.', { position: 'top-center' });
+    return;
+  }
+  try {
+    const results = [];
+    for (const query of queries) {
+      if (query.length < 1) {
+        toast.warn(`Query "${query}" is too short. Minimum 2 characters required.`, { position: 'top-center' });
+        continue;
       }
-      setData(results);
-      setError(results.length === 0 ? 'No matching profiles found.' : '');
-      setSuggestions({});
-      setIsInputFocused(false);
-      if (inputRef.current) inputRef.current.blur();
-    } catch (err) {
-      console.error('❌ Search error:', err.response ? err.response.data : err.message);
-      toast.error('Server error occurred. Please try again.', { position: 'top-center' });
-      setData([]);
-      setTotalCount(0);
+      const response = await axios.get(`${API_URL}/api/IndivisualDataFetching`, {
+        params: { query, field: detectedFields[0] || 'name' },
+        headers: { 'x-auth-token': localStorage.getItem('token') },
+      });
+      if (Array.isArray(response.data.results) && response.data.results.length > 0) {
+        results.push(...response.data.results);
+      }
+      setTotalCount(response.data.total || 0);
     }
-  };
+    setData(results);
+    setError(results.length === 0 ? 'No matching profiles found.' : '');
+    setSuggestions({});
+    setIsInputFocused(false);
+    if (inputRef.current) inputRef.current.blur();
+    // Reset currentPage to 1 and update URL manually
+    const newPage = 1;
+    setCurrentPage(newPage);
+    const params = new URLSearchParams(location.search);
+    params.set('query', searchQuery.trim());
+    params.set('page', newPage);
+    window.history.replaceState({}, '', `${location.pathname}?${params.toString()}`);
+    fetchData(searchQuery.trim(), newPage, detectedFields[0] || ''); // Fetch first page of new search
+  } catch (err) {
+    console.error('❌ Search error:', err.response ? err.response.data : err.message);
+    toast.error('Server error occurred. Please try again.', { position: 'top-center' });
+    setData([]);
+    setTotalCount(0);
+  }
+};
+
+// Calculate total pages based on totalCount
+const totalPages = Math.ceil(totalCount / 20);
+
+// In the pagination section, ensure to use totalPages
+{Array.from({ length: totalPages }, (_, i) => i + 1).slice(
+  Math.max(0, currentPage - 3),
+  Math.min(totalPages, currentPage + 2)
+).map((page) => (
+  <button
+    key={page}
+    onClick={() => {
+      fetchData(searchQuery.trim(), page, detectedFields[0] || '');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }}
+    className={`flex items-center justify-center w-10 h-10 rounded-full ${page === currentPage
+      ? 'bg-blue-700 text-white'
+      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+    } font-semibold text-sm transition-all duration-200 ease-in-out shadow-md hover:shadow-lg`}
+    aria-label={`Go to page ${page}`}
+  >
+    {page}
+  </button>
+))}
+
 
   const handleSuggestionSearch = async (term, field) => {
     try {
@@ -420,7 +472,7 @@ const handlePrevious = () => {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 py-6 border border-gray-100 bg-white">
-        <p className="text-sm font-medium mb-4">Total Records: {totalCount}</p>
+        <p className="text-sm font-medium mb-4">Total Records: {totalCount2}</p>
         {error && <p className="bg-red-100 border-l-4 border-red-400 text-red-700 p-3 rounded-md text-sm mb-4">{error}</p>}
 
         <div className="bg-white shadow-sm border border-gray-100 p-4 rounded-xl mb-6 flex flex-wrap justify-between items-center text-sm text-slate-700">
@@ -518,6 +570,30 @@ const handlePrevious = () => {
         </div>
 
 <div className="flex justify-center items-center gap-2 mt-6">
+<button
+    onClick={() => {
+      fetchData(searchQuery.trim(), 1, detectedFields[0] || '');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }}
+    disabled={currentPage <= 1}
+    className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 ease-in-out shadow-md hover:shadow-lg"
+    aria-label="First page"
+  >
+    <svg
+      className="w-5 h-5"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+      />
+    </svg>
+  </button>
   <button
     onClick={handlePrevious}
     disabled={currentPage <= 1}
@@ -578,6 +654,31 @@ const handlePrevious = () => {
         strokeLinejoin="round"
         strokeWidth="2"
         d="M9 5l7 7-7 7"
+      />
+    </svg>
+  </button>
+  <button
+    onClick={() => {
+      const lastPage = Math.ceil(totalCount / 20);
+      fetchData(searchQuery.trim(), lastPage, detectedFields[0] || '');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }}
+    disabled={currentPage >= Math.ceil(totalCount / 20)}
+    className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 ease-in-out shadow-md hover:shadow-lg"
+    aria-label="Last page"
+  >
+    <svg
+      className="w-5 h-5"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="M5 19l7-7-7-7m8 14l7-7-7-7"
       />
     </svg>
   </button>

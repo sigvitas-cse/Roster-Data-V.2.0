@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaUsers, FaUniversity, FaCity, FaSync } from 'react-icons/fa';
-import { HiOutlineSearch, HiOutlineX, HiOutlinePhone, HiOutlineMail, HiOutlineIdentification, HiOutlineOfficeBuilding } from 'react-icons/hi';
+import { HiOutlineSearch, HiOutlineX } from 'react-icons/hi';
+import { HiOutlinePhone, HiOutlineMail, HiOutlineIdentification, HiOutlineOfficeBuilding } from 'react-icons/hi';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -22,66 +23,20 @@ const Explore = () => {
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1);
   const [totalResults, setTotalResults] = useState(0);
   const suggestionPanelRef = useRef(null);
-  const inputRef = useRef(null);
+  const inputRef = useRef(null); // Added for programmatic focus control
+
   const navigate = useNavigate();
   const API_URL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     const token = localStorage.getItem('token');
     setIsLoggedIn(!!token);
-
-    // Log page visit
-    if (token) {
-      axios.post(
-        `${API_URL}/api/log-page-visit`,
-        { page: '/explore' },
-        { headers: { 'x-auth-token': token } }
-      ).catch(err => console.error('Page visit log error:', err));
-    }
-
-    // Inactivity timer setup
-    let inactivityTimer;
-    const resetInactivityTimer = () => {
-      clearTimeout(inactivityTimer);
-      inactivityTimer = setTimeout(async () => {
-        if (localStorage.getItem('token')) {
-          try {
-            await axios.post(
-              `${API_URL}/api/guiestlogout`,
-              { reason: 'inactive for 5 minutes' },
-              { headers: { 'x-auth-token': localStorage.getItem('token') } }
-            );
-            localStorage.removeItem('token');
-            localStorage.removeItem('userId');
-            localStorage.removeItem('userType');
-            toast.info('Logged out due to 5 minutes of inactivity.', { position: 'top-center' });
-            navigate('/MultipleSearchLogin');
-          } catch (err) {
-            console.error('Auto-logout error:', err);
-            toast.error('Error during auto-logout.', { position: 'top-center' });
-          }
-        }
-      }, 5 * 60 * 1000); // 5 minutes
-    };
-
-    window.addEventListener('mousemove', resetInactivityTimer);
-    window.addEventListener('keydown', resetInactivityTimer);
-    window.addEventListener('click', resetInactivityTimer);
-
-    resetInactivityTimer();
-
-    return () => {
-      clearTimeout(inactivityTimer);
-      window.removeEventListener('mousemove', resetInactivityTimer);
-      window.removeEventListener('keydown', resetInactivityTimer);
-      window.removeEventListener('click', resetInactivityTimer);
-    };
-  }, [navigate]);
+  }, []);
 
   const handleSearch = async (e) => {
     setSuggestions([]);
-    setIsInputFocused(false);
-    if (inputRef.current) inputRef.current.blur();
+    setIsInputFocused(false); // Exit input focus after search
+    if (inputRef.current) inputRef.current.blur(); // Programmatically blur the input
     if (e?.preventDefault) e.preventDefault();
     if (!searchQuery.trim()) {
       toast.error('Please enter a search query', { position: 'top-center' });
@@ -91,14 +46,16 @@ const Explore = () => {
       return;
     }
     const queries = searchQuery.split(',').map((q) => q.trim()).filter(Boolean);
-    if (queries.length > 1 && !isLoggedIn) {
-      toast.info('Login required for multiple searches', { position: 'top-center' });
-      navigate('/MultipleSearchLogin');
-      return;
-    }
-    if (queries.length > 5) {
-      toast.error('Multiple search allows up to 5 entries.', { position: 'top-center' });
-      return;
+    if (queries.length > 1) {
+      if (!isLoggedIn) {
+        toast.info('Login required for multiple searches', { position: 'top-center' });
+        navigate('/MultipleSearchLogin');
+        return;
+      }
+      if (queries.length > 5) {
+        toast.error('Multiple search allows up to 5 entries.', { position: 'top-center' });
+        return;
+      }
     }
     try {
       const results = [];
@@ -108,21 +65,12 @@ const Explore = () => {
           continue;
         }
         const response = await axios.get(`${API_URL}/api/IndivisualDataFetching`, {
-          params: { query, field: detectedFields[0] || 'name' },
-          headers: { 'x-auth-token': localStorage.getItem('token') }
+          params: { query, field: detectedFields[0] || 'name' }
         });
         if (Array.isArray(response.data.results) && response.data.results.length > 0) {
           results.push(...response.data.results);
         }
-        setTotalResults(response.data.total || 0);
-        // Log search
-        if (localStorage.getItem('token')) {
-          await axios.post(
-            `${API_URL}/api/log-search`,
-            { query, field: detectedFields[0] || 'name' },
-            { headers: { 'x-auth-token': localStorage.getItem('token') } }
-          );
-        }
+        setTotalResults(response.data.total || 0); // Use total from response
       }
       setMatchingProfiles(results);
       setError(results.length === 0 ? 'No matching profiles found.' : '');
@@ -137,8 +85,7 @@ const Explore = () => {
   const handleSuggestionSearch = async (term, field) => {
     try {
       const response = await axios.get(`${API_URL}/api/IndivisualDataFetching`, {
-        params: { query: term, field },
-        headers: { 'x-auth-token': localStorage.getItem('token') }
+        params: { query: term, field }
       });
       if (Array.isArray(response.data.results) && response.data.results.length > 0) {
         setMatchingProfiles(response.data.results);
@@ -147,17 +94,9 @@ const Explore = () => {
         setMatchingProfiles([]);
         setError('No matching profiles found.');
       }
-      setTotalResults(response.data.total || 0);
-      setIsInputFocused(false);
-      if (inputRef.current) inputRef.current.blur();
-      // Log search
-      if (localStorage.getItem('token')) {
-        await axios.post(
-          `${API_URL}/api/log-search`,
-          { query: term, field },
-          { headers: { 'x-auth-token': localStorage.getItem('token') } }
-        );
-      }
+      setTotalResults(response.data.total || 0); // Use total from response
+      setIsInputFocused(false); // Exit input focus after suggestion selection
+      if (inputRef.current) inputRef.current.blur(); // Programmatically blur the input
     } catch (err) {
       console.error('❌ Error fetching data from suggestion:', err);
       toast.error('Server error occurred.', { position: 'top-center' });
@@ -169,24 +108,13 @@ const Explore = () => {
   const copyToClipboard = (profile) => {
     const contactDetails = `Name: ${profile.name}\nOrganization: ${profile.organization}\nPhone: ${profile.phoneNumber}\nEmail: ${profile.emailAddress}\nAddress: ${profile.addressLine1}${profile.addressLine2 ? ', ' + profile.addressLine2 : ''}, ${profile.city}, ${profile.state}, ${profile.country}, ${profile.zipcode}`.trim();
     navigator.clipboard.writeText(contactDetails)
-      .then(async () => {
+      .then(() => {
         toast.success(`✔️ Contact info for "${profile.name}" copied!`, {
-          position: 'top-center',
-          autoClose: 2000,
-          theme: 'light'
+          position: 'top-center', autoClose: 2000, theme: 'light'
         });
-        // Log copy action
-        if (localStorage.getItem('token')) {
-          await axios.post(
-            `${API_URL}/api/log-copy`,
-            { name: profile.name, regCode: profile.regCode },
-            { headers: { 'x-auth-token': localStorage.getItem('token') } }
-          );
-        }
       })
       .catch((err) => {
         toast.error('❌ Failed to copy contact details.', { position: 'top-center' });
-        console.error('Copy error:', err);
       });
   };
 
@@ -210,10 +138,7 @@ const Explore = () => {
           setSuggestions({});
           setIsInputFocused(false);
         } else {
-          const res = await axios.get(`${API_URL}/api/suggestions`, {
-            params: { query: trimmed },
-            headers: { 'x-auth-token': localStorage.getItem('token') }
-          });
+          const res = await axios.get(`${API_URL}/api/suggestions`, { params: { query: trimmed } });
           if (res.data?.fields?.length > 0) {
             setDetectedFields(res.data.fields);
             setSuggestions(res.data.suggestions);
@@ -231,6 +156,7 @@ const Explore = () => {
   return (
     <div className="max-w-full w-full flex justify-center bg-white">
       <div className="max-w-7xl w-full h-full flex flex-col bg-gradient-to-b from-[#F8FAFC] to-[#E2E8F0] text-[#1E293B] font-['Inter',sans-serif] relative">
+        {/* Background SVG Decoration */}
         <div className="absolute inset-0 z-0">
           <svg className="w-full h-full opacity-10" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 720">
             <path
@@ -240,6 +166,8 @@ const Explore = () => {
           </svg>
           <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#E2E8F0]/50" />
         </div>
+
+        {/* Fixed Header */}
         <nav className="sticky top-0 z-10 px-6 sm:px-10 lg:px-20 py-4 text-sm text-gray-500 bg-white border-b border-gray-200">
           <ol className="flex items-center space-x-2 max-w-7xl mx-auto">
             <li><a href="/" className="text-sky-600 hover:underline">Home</a></li>
@@ -247,13 +175,18 @@ const Explore = () => {
             <li className="text-gray-700 font-medium">Explore</li>
           </ol>
         </nav>
+
+        {/* Scrollable Main Content */}
         <main className="z-0 px-6 sm:px-10 lg:px-20 pb-24 pt-10">
+          {/* Heading */}
           <div className="mb-10 text-center">
             <h1 className="text-4xl sm:text-5xl font-extrabold mb-3">Explore US Patent Attorney Data</h1>
             <p className="text-lg sm:text-xl text-[#64748B] max-w-2xl mx-auto">
               Dive into our up-to-date directory of attorneys. Use filters to narrow down your search.
             </p>
           </div>
+
+          {/* 🔐 Always-Visible Prompt */}
           {!isLoggedIn && (
             <div className="text-sm text-center text-[#64748B] mb-6">
               Want to search multiple entries at once?{' '}
@@ -266,11 +199,13 @@ const Explore = () => {
               .
             </div>
           )}
+
+          {/* Search Panel */}
           <div className="sticky top-10 min-w-full w-full z-50 flex justify-center bg-white p-6 sm:p-8 rounded-xl shadow-lg border border-[#38BDF8]/20 mb-8">
             <form onSubmit={handleSearch} className="w-full max-w-4xl flex flex-col lg:flex-row gap-4 items-center">
               <div className="w-full lg:w-[100%] relative">
                 <input
-                  ref={inputRef}
+                  ref={inputRef} // Added ref for programmatic focus control
                   type="text"
                   value={searchQuery}
                   onChange={handleInputChange}
@@ -355,6 +290,8 @@ const Explore = () => {
                   placeholder="Search by name, reg no., org, city, etc."
                   className="w-full px-4 py-3 pr-14 pl-4 rounded-full border border-gray-300 focus:ring-2 focus:ring-sky-400 text-sm shadow-sm outline-none"
                 />
+
+                {/* Clear Icon (X) */}
                 {searchQuery && (
                   <button
                     type="button"
@@ -365,6 +302,8 @@ const Explore = () => {
                     <HiOutlineX />
                   </button>
                 )}
+
+                {/* Search Icon */}
                 <button
                   type="button"
                   onClick={handleSearch}
@@ -461,6 +400,7 @@ const Explore = () => {
           <div className="bg-white/80 backdrop-blur-sm border border-sky-100 p-3 rounded-xl mb-6 text-xs text-slate-600 shadow-sm">
             💡 Tip: You can search by name, Registration Number, city, org, or email — even partial terms like “Smith” or “LLP”.
           </div>
+
           <div className="mb-6">
             <h4 className="text-sm text-slate-600 font-semibold mb-2">Popular Queries</h4>
             <div className="flex flex-wrap gap-2">
@@ -487,7 +427,10 @@ const Explore = () => {
               ))}
             </div>
           </div>
+
+          {/* Error Message */}
           {error && <p className="text-red-500 font-semibold text-sm mb-4 text-center">{error}</p>}
+
           <div className="bg-white shadow-sm border border-gray-100 p-4 rounded-xl mb-6 flex flex-wrap justify-between items-center text-sm text-slate-700">
             <span>
               🔍 <strong>{totalResults}</strong> matches found and <strong>{matchingProfiles.length}</strong> results displaying
@@ -506,6 +449,8 @@ const Explore = () => {
               (or check for the most recent update)
             </span>
           </div>
+
+          {/* Results Business Cards */}
           {matchingProfiles.length > 0 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-2">
               {matchingProfiles.map((profile, index) => (
@@ -514,6 +459,7 @@ const Explore = () => {
                   className="relative group bg-white rounded-0 border border-[#38BDF8]/20 shadow-md hover:shadow-2xl transition-transform duration-300 ease-in-out h-[360px] overflow-hidden flex flex-col before:absolute before:inset-0 before:bg-[#38BDF8] before:h-2 before:top-0 before:z-0 group-hover:before:h-full before:transition-all before:duration-300"
                 >
                   <div className="relative z-10 flex flex-col h-full">
+                    {/* Profile Image Section */}
                     <div className="h-1/2 group-hover:h-[50%] transition-all duration-300 flex justify-center items-center bg-sky-700 hover:bg-sky-950">
                       {profile.profileImage ? (
                         <img
@@ -531,6 +477,8 @@ const Explore = () => {
                         </svg>
                       )}
                     </div>
+
+                    {/* Contact Info Section */}
                     <div className="h-1/2 group-hover:h-[50%] transition-all duration-300 px-4 pt-2 overflow-hidden text-left">
                       <div className="space-y-[6px] text-[14px] text-slate-800 leading-tight">
                         <h3 className="text-lg sm:text-xl font-bold text-slate-900 mb-1">{profile.name}</h3>
@@ -556,6 +504,8 @@ const Explore = () => {
                       </div>
                     </div>
                   </div>
+
+                  {/* Buttons Section (slide in) */}
                   <div className="h-0 group-hover:h-[20%] transition-all duration-300 px-4 bg-sky-950 text-white text-sm flex justify-between items-center opacity-0 group-hover:opacity-100">
                     <button
                       onClick={() => copyToClipboard(profile)}
@@ -575,6 +525,8 @@ const Explore = () => {
               ))}
             </div>
           )}
+
+          {/* Footer Buttons */}
           <div className="mt-10 text-center flex flex-col sm:flex-row justify-center items-center gap-4">
             <button
               onClick={() => {
@@ -585,6 +537,7 @@ const Explore = () => {
             >
               ← Back to Home
             </button>
+
             {isLoggedIn && (
               <button
                 onClick={() => navigate('/bigdata')}
@@ -594,6 +547,8 @@ const Explore = () => {
               </button>
             )}
           </div>
+
+          {/* Additional Bottom Content Section */}
           <section className="bg-gradient-to-r from-emerald-50 to-white border border-emerald-200 p-4 rounded-xl shadow mt-10 mb-10">
             <h4 className="text-sm text-emerald-800 font-bold mb-2">🧠 AI Suggests:</h4>
             <p className="text-xs text-slate-700">Users who searched for "<strong>Columbia Law</strong>" also searched for:</p>
@@ -620,6 +575,7 @@ const Explore = () => {
               ))}
             </div>
           </section>
+
           <section className="bg-blue-50 border border-blue-100 p-6 rounded-xl shadow text-sm my-10">
             <h3 className="text-lg font-bold text-blue-800 mb-3">📘 Glossary</h3>
             <ul className="space-y-2 text-gray-700">
@@ -628,6 +584,7 @@ const Explore = () => {
               <li><strong>Agent vs Attorney:</strong> Attorneys are licensed to practice law; agents are certified by the USPTO to represent inventors.</li>
             </ul>
           </section>
+
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center mb-10">
             <div className="bg-white rounded-xl p-4 shadow border">
               <FaUsers className="mx-auto text-blue-600 text-2xl mb-1" />
@@ -650,9 +607,11 @@ const Explore = () => {
               <p className="text-xs text-gray-500">Updates</p>
             </div>
           </div>
+
           <section className="bg-gradient-to-r from-sky-50 to-white border border-sky-100 p-4 rounded-xl shadow mt-10 mb-10 text-sm text-slate-700">
             📈 <strong>Trend:</strong> Most new registrations in the last 6 months are from California and New York.
           </section>
+
           <section className="mt-16 max-w-4xl mx-auto bg-white border border-gray-200 p-6 rounded-xl shadow">
             <h3 className="text-xl font-bold text-center mb-4">🗣️ What Our Users Say</h3>
             <div className="space-y-4">
@@ -666,7 +625,9 @@ const Explore = () => {
               </blockquote>
             </div>
           </section>
+
           <section className="relative mt-20 border-t border-gray-200 pt-12 grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+            {/* How It Works */}
             <div className="bg-white rounded-xl p-6 shadow border border-sky-100">
               <h3 className="text-lg font-bold text-sky-700 mb-3">🔍 How It Works</h3>
               <ul className="text-sm text-gray-600 space-y-2">
@@ -676,6 +637,8 @@ const Explore = () => {
                 <li>• Multiple search requires login</li>
               </ul>
             </div>
+
+            {/* Who Should Use This */}
             <div className="bg-white rounded-xl p-6 shadow border border-blue-100">
               <h3 className="text-lg font-bold text-blue-700 mb-3">👥 Who Should Use This?</h3>
               <ul className="text-sm text-gray-600 space-y-2">
@@ -685,6 +648,8 @@ const Explore = () => {
                 <li>• Organizations validating city or firm affiliations</li>
               </ul>
             </div>
+
+            {/* Visual Illustration */}
             <div className="flex items-center justify-center">
               <img
                 src={patenillustration}
@@ -693,6 +658,8 @@ const Explore = () => {
               />
             </div>
           </section>
+
+          {/* Call to Action: Big Data Access */}
           {!isLoggedIn && (
             <section className="mt-16 max-w-4xl mx-auto bg-gradient-to-r from-sky-50 to-blue-50 p-6 rounded-xl shadow text-center border border-sky-100">
               <h3 className="text-xl font-bold text-gray-800 mb-2">Want to Unlock Big Data Insights?</h3>
@@ -705,6 +672,7 @@ const Explore = () => {
               </button>
             </section>
           )}
+
           <section className="mt-20 max-w-4xl mx-auto">
             <h3 className="text-2xl font-bold text-center mb-6 text-sky-900">❓ Frequently Asked Questions</h3>
             <div className="space-y-4">
@@ -722,6 +690,7 @@ const Explore = () => {
               </details>
             </div>
           </section>
+
           <section className="mt-16 max-w-6xl mx-auto text-center">
             <h3 className="text-xl font-bold text-gray-800 mb-4">Trusted by research teams at:</h3>
             <div className="flex justify-center flex-wrap gap-8 items-center opacity-80">
@@ -731,11 +700,13 @@ const Explore = () => {
               <img src={logo4} className="h-8 grayscale hover:grayscale-0 transition" alt="Logo 4" />
             </div>
           </section>
+
           <div className="my-20">
             <svg viewBox="0 0 1440 120" className="w-full" preserveAspectRatio="none">
               <path fill="#E0F2FE" fillOpacity="1" d="M0,64L80,58.7C160,53,320,43,480,42.7C640,43,800,53,960,69.3C1120,85,1280,107,1360,117.3L1440,128L1440,0L1360,0C1280,0,1120,0,960,0C800,0,640,0,480,0C320,0,160,0,80,0L0,0Z"></path>
             </svg>
           </div>
+
           <section className="mt-20 max-w-3xl mx-auto bg-white border border-gray-200 p-6 rounded-xl shadow text-center">
             <h4 className="text-lg font-semibold text-gray-800 mb-2">💬 Help us improve</h4>
             <p className="text-sm text-gray-600 mb-4">Have suggestions, feature requests, or found a bug?</p>
@@ -746,6 +717,7 @@ const Explore = () => {
               Give Feedback
             </button>
           </section>
+
           <section className="mt-20 max-w-md mx-auto bg-white shadow border border-gray-200 p-6 rounded-xl text-center">
             <h4 className="text-base font-semibold text-gray-800 mb-2">📬 Stay Updated</h4>
             <p className="text-sm text-gray-500 mb-4">Get monthly updates on attorney data improvements and new features.</p>

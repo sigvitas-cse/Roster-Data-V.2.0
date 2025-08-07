@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { HiOutlineMail, HiOutlinePhone, HiOutlineOfficeBuilding, HiOutlineIdentification, HiOutlineSearch, HiOutlineX } from 'react-icons/hi';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 function BigDataPage() {
   const [data, setData] = useState([]);
@@ -18,160 +19,165 @@ function BigDataPage() {
   const suggestionPanelRef = useRef(null);
   const inputRef = useRef(null);
   const navigate = useNavigate();
-
   const location = useLocation();
+  const API_URL = import.meta.env.VITE_API_URL;
 
-   useEffect(() => {
+  useEffect(() => {
     const params = new URLSearchParams(location.search);
+    const pageFromUrl = parseInt(params.get('page')) || 1;
+    const queryFromUrl = params.get('query') || '';
+
+    setSearchQuery(queryFromUrl);
+    setCurrentPage(pageFromUrl);
+
     params.set('query', searchQuery);
     params.set('page', currentPage);
     window.history.replaceState({}, '', `${location.pathname}?${params.toString()}`);
-  }, [searchQuery, currentPage, location]);
 
-  const API_URL = import.meta.env.VITE_API_URL;
-
- const totaldbCount = async () => {
-  try {
-    const response = await axios.get(`${API_URL}/api/totaldbcount`, {
-      headers: { 'x-auth-token': localStorage.getItem('token') },
-    });
-    
-    // Access count from the backend's response
-    const count = response.data.count;
-    setTotalCount2(count);
-
-    console.log('Total DB Count:', count);
-
-    // Optionally, set it to a state
-    // setTotalCount(count); // if using React state
-  } catch (error) {
-    console.error('Error fetching DB count:', error.message);
-  }
-};
-
- 
-const fetchData = async (query = '', page = 1, field = '', limit = 20) => {
-  try {
-    const url = `${API_URL}/api/FullDataAccess?query=${encodeURIComponent(query)}${field ? `&field=${field}` : ''}&page=${page}&limit=${limit}`;
-    const response = await axios.get(url, {
-      headers: { 'x-auth-token': localStorage.getItem('token') },
-    });
-    if (response.data.results && response.data.totalCount !== undefined) {
-      setData(response.data.results);
-      setTotalCount(response.data.totalCount);
-      setCurrentPage(page);
-      setError('');
-    } else {
-      setData([]);
-      setTotalCount(0);
-      setError(response.data.message || 'No data available.');
-    }
-  } catch (err) {
-    console.error('❌ Fetch error:', {
-      message: err.response ? err.response.data.message : err.message,
-      status: err.response ? err.response.status : 'No response',
-      query,
-      field,
-    });
-    setError('Server error. Please try again.');
-    setData([]);
-    setTotalCount(0);
-    if (err.response && err.response.status === 401) {
-      toast.error('Authentication failed. Please log in again.', { position: 'top-center' });
-      localStorage.removeItem('token');
-      navigate('/explore', { replace: true });
-    }
-  }
-};
-
-  useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
       navigate('/explore', { replace: true });
       return;
     }
-    const params = new URLSearchParams(location.search);
-    const pageFromUrl = parseInt(params.get('page')) || 1;
-    const queryFromUrl = params.get('query') || '';
-    setSearchQuery(queryFromUrl);
-    setCurrentPage(pageFromUrl);
-    fetchData(queryFromUrl, pageFromUrl); // Fetch data based on URL params
+
+    // Log page visit on mount
+    logPageVisit(pageFromUrl);
+
+    let inactivityTimer;
+    const resetInactivityTimer = () => {
+      clearTimeout(inactivityTimer);
+      inactivityTimer = setTimeout(async () => {
+        if (localStorage.getItem('token')) {
+          try {
+            await axios.post(
+              `${API_URL}/api/guiestlogout`,
+              { reason: 'inactive for 5 minutes' },
+              { headers: { 'x-auth-token': localStorage.getItem('token') } }
+            );
+            localStorage.removeItem('token');
+            localStorage.removeItem('userId');
+            localStorage.removeItem('userType');
+            toast.info('Logged out due to 5 minutes of inactivity.', { position: 'top-center' });
+            navigate('/MultipleSearchLogin');
+          } catch (err) {
+            console.error('Auto-logout error:', err);
+            toast.error('Error during auto-logout.', { position: 'top-center' });
+          }
+        }
+      }, 5 * 60 * 1000);
+    };
+
+    window.addEventListener('mousemove', resetInactivityTimer);
+    window.addEventListener('keydown', resetInactivityTimer);
+    window.addEventListener('click', resetInactivityTimer);
+
+    resetInactivityTimer();
+
+    fetchData(queryFromUrl, pageFromUrl);
     totaldbCount();
+
+    return () => {
+      clearTimeout(inactivityTimer);
+      window.removeEventListener('mousemove', resetInactivityTimer);
+      window.removeEventListener('keydown', resetInactivityTimer);
+      window.removeEventListener('click', resetInactivityTimer);
+    };
   }, [navigate, location]);
 
-
-const handleSearch = async (e) => {
-  if (e?.preventDefault) e.preventDefault();
-  if (!searchQuery.trim()) {
-    toast.error('Please enter a search query', { position: 'top-center' });
-    return;
-  }
-  const queries = searchQuery.split(',').map(q => q.trim()).filter(Boolean);
-  if (queries.length > 5) {
-    toast.error('Multiple search allows up to 5 entries.', { position: 'top-center' });
-    return;
-  }
-  try {
-    const results = [];
-    for (const query of queries) {
-      if (query.length < 1) {
-        toast.warn(`Query "${query}" is too short. Minimum 2 characters required.`, { position: 'top-center' });
-        continue;
-      }
-      const response = await axios.get(`${API_URL}/api/IndivisualDataFetching`, {
-        params: { query, field: detectedFields[0] || 'name' },
+  const totaldbCount = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/api/totaldbcount`, {
         headers: { 'x-auth-token': localStorage.getItem('token') },
       });
-      if (Array.isArray(response.data.results) && response.data.results.length > 0) {
-        results.push(...response.data.results);
-      }
-      setTotalCount(response.data.total || 0);
+      setTotalCount2(response.data.count);
+    } catch (error) {
+      console.error('Error fetching DB count:', error.message);
     }
-    setData(results);
-    setError(results.length === 0 ? 'No matching profiles found.' : '');
-    setSuggestions({});
-    setIsInputFocused(false);
-    if (inputRef.current) inputRef.current.blur();
-    // Reset currentPage to 1 and update URL manually
-    const newPage = 1;
-    setCurrentPage(newPage);
-    const params = new URLSearchParams(location.search);
-    params.set('query', searchQuery.trim());
-    params.set('page', newPage);
-    window.history.replaceState({}, '', `${location.pathname}?${params.toString()}`);
-    fetchData(searchQuery.trim(), newPage, detectedFields[0] || ''); // Fetch first page of new search
-  } catch (err) {
-    console.error('❌ Search error:', err.response ? err.response.data : err.message);
-    toast.error('Server error occurred. Please try again.', { position: 'top-center' });
-    setData([]);
-    setTotalCount(0);
-  }
-};
+  };
 
-// Calculate total pages based on totalCount
-const totalPages = Math.ceil(totalCount / 20);
+  const fetchData = async (query = '', page = 1, field = '', limit = 20) => {
+    try {
+      const url = `${API_URL}/api/FullDataAccess?query=${encodeURIComponent(query)}${field ? `&field=${field}` : ''}&page=${page}&limit=${limit}`;
+      const response = await axios.get(url, {
+        headers: { 'x-auth-token': localStorage.getItem('token') },
+      });
+      if (response.data.results && response.data.totalCount !== undefined) {
+        setData(response.data.results);
+        setTotalCount(response.data.totalCount);
+        setCurrentPage(page);
+        setError('');
+        // Log page change
+        logPageVisit(page);
+      } else {
+        setData([]);
+        setTotalCount(0);
+        setError(response.data.message || 'No data available.');
+      }
+    } catch (err) {
+      console.error('❌ Fetch error:', {
+        message: err.response ? err.response.data.message : err.message,
+        status: err.response ? err.response.status : 'No response',
+        query,
+        field,
+      });
+      setError('Server error. Please try again.');
+      setData([]);
+      setTotalCount(0);
+      if (err.response && err.response.status === 401) {
+        toast.error('Authentication failed. Please log in again.', { position: 'top-center' });
+        localStorage.removeItem('token');
+        navigate('/explore', { replace: true });
+      }
+    }
+  };
 
-// In the pagination section, ensure to use totalPages
-{Array.from({ length: totalPages }, (_, i) => i + 1).slice(
-  Math.max(0, currentPage - 3),
-  Math.min(totalPages, currentPage + 2)
-).map((page) => (
-  <button
-    key={page}
-    onClick={() => {
-      fetchData(searchQuery.trim(), page, detectedFields[0] || '');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }}
-    className={`flex items-center justify-center w-10 h-10 rounded-full ${page === currentPage
-      ? 'bg-blue-700 text-white'
-      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-    } font-semibold text-sm transition-all duration-200 ease-in-out shadow-md hover:shadow-lg`}
-    aria-label={`Go to page ${page}`}
-  >
-    {page}
-  </button>
-))}
-
+  const handleSearch = async (e) => {
+    if (e?.preventDefault) e.preventDefault();
+    if (!searchQuery.trim()) {
+      toast.error('Please enter a search query', { position: 'top-center' });
+      return;
+    }
+    const queries = searchQuery.split(',').map(q => q.trim()).filter(Boolean);
+    if (queries.length > 5) {
+      toast.error('Multiple search allows up to 5 entries.', { position: 'top-center' });
+      return;
+    }
+    try {
+      const results = [];
+      for (const query of queries) {
+        if (query.length < 1) {
+          toast.warn(`Query "${query}" is too short. Minimum 2 characters required.`, { position: 'top-center' });
+          continue;
+        }
+        const response = await axios.get(`${API_URL}/api/IndivisualDataFetching`, {
+          params: { query, field: detectedFields[0] || 'name' },
+          headers: { 'x-auth-token': localStorage.getItem('token') },
+        });
+        if (Array.isArray(response.data.results) && response.data.results.length > 0) {
+          results.push(...response.data.results);
+        }
+        setTotalCount(response.data.total || 0);
+      }
+      setData(results);
+      setError(results.length === 0 ? 'No matching profiles found.' : '');
+      setSuggestions({});
+      setIsInputFocused(false);
+      if (inputRef.current) inputRef.current.blur();
+      setCurrentPage(1);
+      const params = new URLSearchParams(location.search);
+      params.set('query', searchQuery.trim());
+      params.set('page', 1);
+      window.history.replaceState({}, '', `${location.pathname}?${params.toString()}`);
+      fetchData(searchQuery.trim(), 1, detectedFields[0] || '');
+      // Log search action
+      logSearch(searchQuery.trim(), detectedFields[0] || 'name');
+    } catch (err) {
+      console.error('❌ Search error:', err.response ? err.response.data : err.message);
+      toast.error('Server error occurred. Please try again.', { position: 'top-center' });
+      setData([]);
+      setTotalCount(0);
+    }
+  };
 
   const handleSuggestionSearch = async (term, field) => {
     try {
@@ -190,6 +196,8 @@ const totalPages = Math.ceil(totalCount / 20);
       setSuggestions({});
       setIsInputFocused(false);
       if (inputRef.current) inputRef.current.blur();
+      // Log suggestion search
+      logSearch(term, field);
     } catch (err) {
       console.error('❌ Suggestion search error:', err);
       toast.error('Server error occurred.', { position: 'top-center' });
@@ -198,6 +206,23 @@ const totalPages = Math.ceil(totalCount / 20);
     }
   };
 
+  const copyToClipboard = async (profile) => {
+    const contactDetails = `Name: ${profile.name}\nOrganization: ${profile.organization}\nPhone: ${profile.phoneNumber}\nEmail: ${profile.emailAddress}\nAddress: ${profile.addressLine1}${profile.addressLine2 ? ', ' + profile.addressLine2 : ''}, ${profile.city}, ${profile.state}, ${profile.country}, ${profile.zipcode}\nReg No.: ${profile.regCode}`.trim();
+    try {
+      await navigator.clipboard.writeText(contactDetails);
+      toast.success(`✔️ Contact info for "${profile.name}" copied!`, { position: 'top-center', autoClose: 2000, theme: 'light' });
+      await axios.post(
+        `${API_URL}/api/log-copy`,
+        { name: profile.name, regCode: profile.regCode },
+        { headers: { 'x-auth-token': localStorage.getItem('token') } }
+      );
+    } catch (err) {
+      console.error('Copy error:', err);
+      toast.error('❌ Failed to copy contact details.', { position: 'top-center' });
+    }
+  };
+
+  let debounceTimer;
   const handleInputChange = (e) => {
     const value = e.target.value;
     setSearchQuery(value);
@@ -235,7 +260,6 @@ const totalPages = Math.ceil(totalCount / 20);
     }, 300);
   };
 
-  let debounceTimer;
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
       if (isInputFocused && Object.keys(suggestions).length > 0 && activeSuggestionIndex >= 0) {
@@ -306,31 +330,56 @@ const totalPages = Math.ceil(totalCount / 20);
   };
 
   const handleNext = () => {
-  if ((currentPage * 20) < totalCount) {
-    fetchData(searchQuery.trim(), currentPage + 1, detectedFields[0] || '');
-  }
-};
-
-const handlePrevious = () => {
-  if (currentPage > 1) {
-    fetchData(searchQuery.trim(), currentPage - 1, detectedFields[0] || '');
-  }
-};
-
-  const handleLogout = async () => {
-    await fetch(`${API_URL}/api/guiestlogout`, {
-      method: 'POST',
-      headers: { 'x-auth-token': localStorage.getItem('token') },
-    });
-    localStorage.removeItem('token');
-    navigate('/explore', { replace: true });
+    if ((currentPage * 20) < totalCount) {
+      fetchData(searchQuery.trim(), currentPage + 1, detectedFields[0] || '');
+    }
   };
 
-  const copyToClipboard = (profile) => {
-    const contactDetails = `Name: ${profile.name}\nOrganization: ${profile.organization}\nPhone: ${profile.phoneNumber}\nEmail: ${profile.emailAddress}\nAddress: ${profile.addressLine1}${profile.addressLine2 ? ', ' + profile.addressLine2 : ''}, ${profile.city}, ${profile.state}, ${profile.country}, ${profile.zipcode}\nReg No.: ${profile.regCode}`.trim();
-    navigator.clipboard.writeText(contactDetails)
-      .then(() => toast.success(`✔️ Contact info for "${profile.name}" copied!`, { position: 'top-center', autoClose: 2000, theme: 'light' }))
-      .catch(() => toast.error('❌ Failed to copy contact details.', { position: 'top-center' }));
+  const handlePrevious = () => {
+    if (currentPage > 1) {
+      fetchData(searchQuery.trim(), currentPage - 1, detectedFields[0] || '');
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await axios.post(
+        `${API_URL}/api/guiestlogout`,
+        { reason: 'Manual logout' },
+        { headers: { 'x-auth-token': localStorage.getItem('token') } }
+      );
+      localStorage.removeItem('token');
+      navigate('/explore', { replace: true });
+    } catch (err) {
+      console.error('Logout error:', err);
+      toast.error('Error during logout.', { position: 'top-center' });
+    }
+  };
+
+  // Helper function to log page visits
+  const logPageVisit = async (page) => {
+    try {
+      await axios.post(
+        `${API_URL}/api/log-page-visit`,
+        { page: '/bigdata', currentPage: page },
+        { headers: { 'x-auth-token': localStorage.getItem('token') } }
+      );
+    } catch (err) {
+      console.error('Page visit log error:', err);
+    }
+  };
+
+  // Helper function to log search actions
+  const logSearch = async (query, field) => {
+    try {
+      await axios.post(
+        `${API_URL}/api/log-search`,
+        { query, field },
+        { headers: { 'x-auth-token': localStorage.getItem('token') } }
+      );
+    } catch (err) {
+      console.error('Search log error:', err);
+    }
   };
 
   return (
@@ -344,7 +393,6 @@ const handlePrevious = () => {
         </div>
       </div>
 
-      {/* Search Panel */}
       <div className="z-50 sticky top-[68px] w-full max-w-6xl mb-0 mx-auto flex justify-center bg-white p-6 sm:p-8 rounded-0 shadow-lg border border-[#38BDF8]/20 my-0">
         <form onSubmit={handleSearch} className="w-full max-w-2xl flex flex-col lg:flex-row gap-4 items-center">
           <div className="w-full relative">
@@ -421,10 +469,10 @@ const handlePrevious = () => {
                         <div key={field} className="flex flex-col">
                           <h4 className="font-semibold text-gray-700 capitalize mb-2">
                             {field === 'regCode' ? 'Reg No.' : 
-                            field === 'phoneNumber' ? 'Phone' : 
-                            field === 'addressLine1' ? 'Address' : 
-                            field === 'agentAttorney' ? 'Agent/Attorney' : 
-                            field}
+                             field === 'phoneNumber' ? 'Phone' : 
+                             field === 'addressLine1' ? 'Address' : 
+                             field === 'agentAttorney' ? 'Agent/Attorney' : 
+                             field}
                           </h4>
                           <ul className="space-y-1">
                             {suggestions[field].slice(0, 5).map((s, i) => {
@@ -569,121 +617,130 @@ const handlePrevious = () => {
           ))}
         </div>
 
-<div className="flex justify-center items-center gap-2 mt-6">
-<button
-    onClick={() => {
-      fetchData(searchQuery.trim(), 1, detectedFields[0] || '');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }}
-    disabled={currentPage <= 1}
-    className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 ease-in-out shadow-md hover:shadow-lg"
-    aria-label="First page"
-  >
-    <svg
-      className="w-5 h-5"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="2"
-        d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
-      />
-    </svg>
-  </button>
-  <button
-    onClick={handlePrevious}
-    disabled={currentPage <= 1}
-    className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 ease-in-out shadow-md hover:shadow-lg"
-    aria-label="Previous page"
-  >
-    <svg
-      className="w-5 h-5"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="2"
-        d="M15 19l-7-7 7-7"
-      />
-    </svg>
-  </button>
+        <div className="flex justify-center items-center gap-2 mt-6">
+          <button
+            onClick={() => {
+              fetchData(searchQuery.trim(), 1, detectedFields[0] || '');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            disabled={currentPage <= 1}
+            className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 ease-in-out shadow-md hover:shadow-lg"
+            aria-label="First page"
+          >
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+              />
+            </svg>
+          </button>
+          <button
+            onClick={handlePrevious}
+            disabled={currentPage <= 1}
+            className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 ease-in-out shadow-md hover:shadow-lg"
+            aria-label="Previous page"
+          >
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+          </button>
 
-  {/* Dynamic Page Number Buttons */}
-  {Array.from({ length: Math.ceil(totalCount / 20) }, (_, i) => i + 1).slice(
-    Math.max(0, currentPage - 3),
-    Math.min(Math.ceil(totalCount / 20), currentPage + 2)
-  ).map((page) => (
-    <button
-      key={page}
-      onClick={() => {
-        fetchData(searchQuery.trim(), page, detectedFields[0] || '');
-        window.scrollTo({ top: 0, behavior: 'smooth' }); // Scroll to top smoothly
-      }}
-      className={`flex items-center justify-center w-10 h-10 rounded-full ${page === currentPage
-        ? 'bg-blue-700 text-white'
-        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-      } font-semibold text-sm transition-all duration-200 ease-in-out shadow-md hover:shadow-lg`}
-      aria-label={`Go to page ${page}`}
-    >
-      {page}
-    </button>
-  ))}
+          {Array.from({ length: Math.ceil(totalCount / 20) }, (_, i) => i + 1).slice(
+            Math.max(0, currentPage - 3),
+            Math.min(Math.ceil(totalCount / 20), currentPage + 2)
+          ).map((page) => (
+            <button
+              key={page}
+              onClick={() => {
+                fetchData(searchQuery.trim(), page, detectedFields[0] || '');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className={`flex items-center justify-center w-10 h-10 rounded-full ${page === currentPage
+                ? 'bg-blue-700 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              } font-semibold text-sm transition-all duration-200 ease-in-out shadow-md hover:shadow-lg`}
+              aria-label={`Go to page ${page}`}
+            >
+              {page}
+            </button>
+          ))}
 
-  <button
-    onClick={handleNext}
-    className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 transition-all duration-200 ease-in-out shadow-md hover:shadow-lg"
-    aria-label="Next page"
-  >
-    <svg
-      className="w-5 h-5"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="2"
-        d="M9 5l7 7-7 7"
-      />
-    </svg>
-  </button>
-  <button
-    onClick={() => {
-      const lastPage = Math.ceil(totalCount / 20);
-      fetchData(searchQuery.trim(), lastPage, detectedFields[0] || '');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }}
-    disabled={currentPage >= Math.ceil(totalCount / 20)}
-    className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 ease-in-out shadow-md hover:shadow-lg"
-    aria-label="Last page"
-  >
-    <svg
-      className="w-5 h-5"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="2"
-        d="M5 19l7-7-7-7m8 14l7-7-7-7"
-      />
-    </svg>
-  </button>
-</div>
+          <button
+            onClick={handleNext}
+            className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 transition-all duration-200 ease-in-out shadow-md hover:shadow-lg"
+            aria-label="Next page"
+          >
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+          </button>
+          <button
+            onClick={() => {
+              const lastPage = Math.ceil(totalCount / 20);
+              fetchData(searchQuery.trim(), lastPage, detectedFields[0] || '');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            disabled={currentPage >= Math.ceil(totalCount / 20)}
+            className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 ease-in-out shadow-md hover:shadow-lg"
+            aria-label="Last page"
+          >
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M5 19l7-7-7-7m8 14l7-7-7-7"
+              />
+            </svg>
+          </button>
+        </div>
+        <div className="mt-10 text-center">
+        <button
+          onClick={() => navigate('/explore')}
+          className="text-[#38BDF8] text-sm font-medium hover:underline"
+        >
+          ← Back to Explore
+        </button>
       </div>
+      </div>
+
+      
     </div>
   );
 }

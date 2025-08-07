@@ -14,6 +14,7 @@ import analysis from "../assets/analysis.png";
 import AdminImage from "../assets/AdminDashboardFeatures.mp4";
 import UserTrackingFromExportPage from "../components/AdminDashBoard/UserActivityTracking/userTrackingFromExportPage.jsx";
 
+
 // Welcome Component with Enhanced Content
 const Welcome = () => {
   return (
@@ -64,6 +65,7 @@ const Welcome = () => {
             alt="Dashboard Overview"
             className="w-full h-100 object-cover rounded"
           />
+          {/* <p className="mt-2 text-sm">Explore the main features of your admin panel.</p> */}
         </div>
 
         {/* Card 2: Video Placeholder */}
@@ -85,6 +87,7 @@ const Welcome = () => {
               Your browser does not support the video tag.
             </video>
           </div>
+          {/* <p className="mt-2 text-sm">Watch a short demo of the dashboard in action.</p> */}
         </div>
 
         {/* Card 3: Analysis Preview */}
@@ -104,6 +107,7 @@ const Welcome = () => {
             alt="Team Collaboration"
             className="w-full h-100 object-cover rounded"
           />
+          {/* <p className="mt-2 text-sm">Manage your attorney roster efficiently.</p> */}
         </div>
       </div>
 
@@ -188,6 +192,7 @@ function AdminDashboard() {
     { id: "analysis", label: "Analysis", icon: "fa-chart-simple", badge: 0 },
     { id: "addUserForm", label: "Add User", icon: "fa-user-plus", badge: 0 },
     { id: "userActivity", label: "User Activity", icon: "fa-user-clock", badge: 0 },
+
   ];
 
   return (
@@ -219,9 +224,9 @@ function AdminDashboard() {
       <div className="flex flex-1 w-full h-full box-border">
         {/* Sidebar */}
         <aside
-          className={`w-64 bg-white transform transition-transform duration-300 ease-in-out fixed top-[60px] bottom-0 z-40 shadow-md ${
+          className={`w-64 bg-white transform transition-transform duration-300 ease-in-out ${
             isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-          } lg:${isSidebarOpen ? "translate-x-0 w-64" : "translate-x-0 w-16"}`}
+          } lg:${isSidebarOpen ? "translate-x-0 static w-64" : "translate-x-0 w-16"} z-40 fixed lg:static`}
         >
           <div className="p-4 h-full overflow-auto box-border">
             <h2 className="text-xl font-extrabold text-[#1E293B] mb-6 flex items-center">
@@ -256,8 +261,9 @@ function AdminDashboard() {
 
         {/* Content Area */}
         <main
-          className={`flex-1 p-6 overflow-auto transition-all box-border ml-0 lg:ml-64`}
-          style={{ marginLeft: isSidebarOpen ? "256px" : "64px" }} // Adjust based on sidebar width
+          className={`flex-1 p-6 overflow-auto transition-all box-border ${
+            isSidebarOpen ? "" : "w-full"
+          } lg:${isSidebarOpen ? "flex-1" : "ml-16"}`}
         >
           <div className="w-full h-full grid grid-cols-1 lg:grid-cols-1 gap-0 box-border">
             <ErrorBoundary>
@@ -282,6 +288,7 @@ function AdminDashboard() {
                     {activeSection === "analysis" && <Analysis />}
                     {activeSection === "addUserForm" && <AddUserForm />}
                     {activeSection === "userActivity" && <UserTrackingFromExportPage />}
+
                   </>
                 )}
               </div>

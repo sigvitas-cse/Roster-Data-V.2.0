@@ -12,12 +12,14 @@ mongoose.connect(MONGO_URI)
 const insertNewUser = async () => {
   try {
 
-    const plainPassword = 'Xr9#vT!8wLq@72Mz';
+    const plainPassword = 'N3t@Shield!492';
     const hashedPassword = await bcrypt.hash(plainPassword, 10);
-
+// grayj@triangleip.com, N3t@Shield!492
+// c_kalra, $c&#kalara#!492
+// ravi@zodiacpatent.com, Xr9#vT!8wLq@72Mz
 
     const newUser = await GuiestLogin.create({
-      email: 'ravi@zodiacpatent.com',
+      email: 'grayj@triangleip.com',
       password: hashedPassword,
       accessRevoked: false,
       currentPage: 1,

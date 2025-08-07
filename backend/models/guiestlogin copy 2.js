@@ -4,7 +4,7 @@ const activityLogSchema = new mongoose.Schema({
   action: {
     type: String,
     required: true,
-    enum: ['login', 'logout', 'page_visit', 'search', 'copy', 'attempted_previous_page', 'max_page_reset', 'attempted_exceed_page_limit', 'access_revoked', 'revocation_reset', 'activity_deleted'], // Added 'activity_deleted'
+    enum: ['login', 'logout', 'page_visit', 'search', 'copy', 'attempted_previous_page', 'max_page_reset', 'attempted_exceed_page_limit', 'access_revoked', 'revocation_reset'],
   },
   page: { type: Number },
   details: { type: mongoose.Schema.Types.Mixed, default: {} },
@@ -76,4 +76,4 @@ const userSchema = new mongoose.Schema({
   },
 });
 
-module.exports = mongoose.model('guiestlogins', userSchema); // Corrected to 'GuestLogin'
+module.exports = mongoose.model('GuiestLogin', userSchema); // Note: Changed to 'GuestLogin' for consistency
