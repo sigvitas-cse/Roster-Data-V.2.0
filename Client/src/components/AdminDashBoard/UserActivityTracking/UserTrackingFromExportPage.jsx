@@ -55,7 +55,7 @@ const logPageVisit = useCallback(
       // Refresh data if needed
     } catch (err) {
       console.error('Page visit log error:', err.response ? err.response.data : err.message);
-      toast.error(`Failed to log page visit: ${err.message}`);
+      // toast.error(`Failed to log page visit: ${err.message}`);
     }
   }, 1000), // 1-second debounce
   []
