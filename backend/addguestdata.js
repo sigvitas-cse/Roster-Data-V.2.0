@@ -12,15 +12,17 @@ mongoose.connect(MONGO_URI)
 const insertNewUser = async () => {
   try {
 
-    const plainPassword = 'yashaswini@123';
+    const plainPassword = 'Tg9!mR7zQx@2vLp';
     const hashedPassword = await bcrypt.hash(plainPassword, 10);
 // grayj@triangleip.com, N3t@Shield!492
 // c_kalra, $c&#kalara#!492
 // ravi@zodiacpatent.com, Xr9#vT!8wLq@72Mz
 // yashaswini@sigvitas.com, yashaswini@123
+// chris@ipdatalab.com, Tg9!mR7zQx@2vLp
+// chris@ipdatalab.com, Cr8#nLp2@Vz6kQw -> for roster data admin panel
 
     const newUser = await GuiestLogin.create({
-      email: 'yashaswini@sigvitas.com',
+      email: 'chris@ipdatalab.com',
       password: hashedPassword,
       accessRevoked: false,
       currentPage: 1,
