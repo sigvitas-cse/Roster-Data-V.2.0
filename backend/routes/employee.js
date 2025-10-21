@@ -728,6 +728,7 @@ router.post("/upload-excel-dynamic", upload.single("excelFile"), async (req, res
     const users = sheetData.map((row) => ({
       slNo: row["S. No."],
       name: row["Name"],
+      highTechQualification: row["Education"], // Add new field
       organization: row["Organization/Law Firm Name"],
       addressLine1: row["Address Line 1"],
       addressLine2: row["Address Line 2"],
@@ -790,7 +791,8 @@ router.post("/upload-excel-dynamic", upload.single("excelFile"), async (req, res
 
     const mailOptions = {
       from: 'darshan@sigvitas.com',
-      to: `dverma@sigvitas.com, darshan@sigvitas.com`,
+      // to: `dverma@sigvitas.com, darshan@sigvitas.com`,
+      to: `darshan@sigvitas.com`,
       subject: 'Re: Daily Data Uploading',
       // text: `Hello Sir, /n/n${userId2} uploaded the data successfully on ${formattedDate} at ${formattedTime}. Total number of users: ${total}/n/nBest Regards,/nDarshan`,
       text: `Hello Sir,\n\n${userId2} uploaded the data successfully on ${formattedDate} at ${formattedTime}. \nTotal Attorneys in the Roster: ${total}\n\nBest Regards,\nDarshan`,

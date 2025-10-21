@@ -588,9 +588,26 @@ const Explore = () => {
             {isLoggedIn && (
               <button
                 onClick={() => navigate('/bigdata')}
-                className="text-[#0F172A] text-sm bg-[#E0F2FE] hover:bg-[#BAE6FD] px-4 py-2 rounded-lg font-medium"
+                className="relative text-white text-sm font-semibold bg-gradient-to-r from-[#38BDF8] to-[#60A5FA] hover:from-[#2B9FE7] hover:to-[#4B8EF1] px-6 py-3 rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-300 ease-in-out overflow-hidden animate-pulse-button"
               >
-                Go to Big Data →
+                <span className="relative z-10 flex items-center gap-2">
+                  Go to Big Data
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
+                </span>
+                <span className="absolute inset-0 bg-white opacity-0 hover:opacity-10 transition-opacity duration-300"></span>
               </button>
             )}
           </div>

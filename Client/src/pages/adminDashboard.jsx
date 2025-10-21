@@ -151,6 +151,7 @@ function AdminDashboard() {
   const [activeSection, setActiveSection] = useState("welcome"); // Default to "welcome"
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [rosterBadge, setRosterBadge] = useState(0); // State to store badge value
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -164,6 +165,26 @@ function AdminDashboard() {
       });
       navigate("/");
     }
+
+    const API_URL = import.meta.env.VITE_API_URL;
+
+// Fetch data for Attorney Roster badge
+    const fetchRosterBadge = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/api/all-users-data`, {
+          params: { page: 1, limit: 1 }, // Minimal fetch to get total count
+        });
+        if (response.status === 200) {
+          setRosterBadge(response.data.totalUsers); // Set badge to totalUsers
+        }
+      } catch (err) {
+        console.error("❌ Error fetching users data:", err);
+        setRosterBadge(53000); // Fallback to default value in case of error
+      }
+    };
+
+    fetchRosterBadge();
+
   }, [navigate]);
 
   const handleLogout = () => {
@@ -184,7 +205,7 @@ function AdminDashboard() {
   const navItems = [
     { id: "welcome", label: "Home", icon: "fa-home", badge: 0 },
     { id: "users", label: "Users", icon: "fa-users", badge: 15 },
-    { id: "patentData", label: "Attorney Roster", icon: "fa-cloud", badge: 52752 },
+    { id: "patentData", label: "Attorney Roster", icon: "fa-cloud", badge: rosterBadge },
     { id: "analysis", label: "Analysis", icon: "fa-chart-simple", badge: 0 },
     { id: "addUserForm", label: "Add User", icon: "fa-user-plus", badge: 0 },
     { id: "userActivity", label: "User Activity", icon: "fa-user-clock", badge: 0 },

@@ -164,6 +164,7 @@ const LiveSheet = () => {
     if (!user) return false;
     const searchableFields = [
       user.name,
+      user.highTechQualification,
       user.organization,
       user.addressLine1,
       user.addressLine2,
@@ -272,6 +273,7 @@ const LiveSheet = () => {
               {[
                 "S. No.",
                 "Name",
+                "Education",
                 "Organization",
                 "Address Line 1",
                 "Address Line 2",
@@ -325,6 +327,7 @@ const LiveSheet = () => {
                 <td className="p-1.5 border-b border-r border-[#E2E8F0] text-[11px]">{startIndex + index + 1}</td>
                 {[
                   "name",
+                  "highTechQualification",
                   "organization",
                   "addressLine1",
                   "addressLine2",

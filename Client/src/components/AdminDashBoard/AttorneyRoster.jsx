@@ -31,6 +31,7 @@ const AttorneyRoster = () => {
   const headerMap = {
     "S. No.": "slNo",
     Name: "name",
+    Education: "highTechQualification",
     Organization: "organization",
     "Address Line 1": "addressLine1",
     "Address Line 2": "addressLine2",
@@ -298,6 +299,7 @@ const AttorneyRoster = () => {
                           // overflow-hidden whitespace-nowrap text-ellipsis  thease will done by truncate
                           className={`p-1 border-b border-[#CBD5E1] text-[10px] whitespace-normal ${
                             key === "name" ? "max-w-[120px] whitespace-nowrap text-ellipsis" :
+                            key === "highTechQualification" ? "max-w-[120px] overflow-hidden whitespace-nowrap text-ellipsis" :
                             key === "organization" ? "max-w-[120px] overflow-hidden whitespace-nowrap text-ellipsis" :
                             key === "addressLine1" ? "max-w-[120px] overflow-hidden whitespace-nowrap text-ellipsis" :
                             key === "addressLine2" ? "max-w-[120px] overflow-hidden whitespace-nowrap text-ellipsis" :

@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const OldProfileSchema = new mongoose.Schema({
   slNo: Number,
   name: String,
+  highTechQualification: String, // Add new field
   organization: String,
   addressLine1: String,
   addressLine2: String,

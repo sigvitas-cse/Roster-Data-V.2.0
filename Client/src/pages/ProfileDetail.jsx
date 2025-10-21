@@ -7,7 +7,7 @@ import {
   HiOutlineIdentification,
   HiOutlineOfficeBuilding,
   HiOutlineGlobe,
-  HiOutlineLocationMarker
+  HiOutlineLocationMarker,
 } from 'react-icons/hi';
 import ErrorModal from '../components/Home/ErrorModel'; // Adjust the import path as necessary
 
@@ -17,15 +17,18 @@ function ProfileDetail() {
   const [profile, setProfile] = useState(null);
   const [error, setError] = useState('');
   const API_URL = import.meta.env.VITE_API_URL;
-  
 
   useEffect(() => {
     async function fetchProfile() {
       try {
         const res = await fetch(`${API_URL}/api/profile/${id}`);
         const data = await res.json();
-        if (res.ok) setProfile(data);
-        else setError(data.message || 'Failed to fetch profile');
+        if (res.ok) {
+          console.log('Profile data:', data); // Log to debug fields
+          setProfile(data);
+        } else {
+          setError(data.message || 'Failed to fetch profile');
+        }
       } catch (err) {
         setError('Server error');
       }
@@ -34,14 +37,61 @@ function ProfileDetail() {
     fetchProfile();
   }, [id]);
 
-  // if (error) return <p className="text-red-500 text-center bg-white">{error}</p>;
-if (error) {
-    return (
-      <ErrorModal error={error} onClose={() => setShowModal(false)} />
-    );
+  if (error) {
+    return <ErrorModal error={error} onClose={() => navigate(-1)} />;
   }
 
   if (!profile) return <p className="text-center mt-8">Loading...</p>;
+
+  // Define fields for Updated Data
+  const updatedFieldKeys = [
+    'name',
+    'highTechQualification',
+    'regCode',
+    'agentAttorney',
+    'dateOfPatent',
+    'agentLicensed',
+    'firmOrOrganization',
+    'updatedPhoneNumber',
+    'emailAddress',
+    'updatedOrganization',
+    'firmUrl',
+    'updatedAddress',
+    'updatedCity',
+    'updatedState',
+    'updatedCountry',
+    'updatedZipcode',
+    'linkedInProfile',
+  ];
+  const updatedFields = Object.entries(profile).filter(
+    ([key, value]) =>
+      updatedFieldKeys.includes(key) &&
+      value &&
+      typeof value === 'string' &&
+      value !== '0'
+  );
+
+  // Define fields for Original Data
+  const originalFieldKeys = [
+    'name',
+    'firmOrOrganization',
+    'addressLine1',
+    'addressLine2',
+    'city',
+    'state',
+    'country',
+    'zipcode',
+    'phoneNumber',
+    'regCode',
+    'agentAttorney',
+  ];
+  const originalFields = Object.entries(profile).filter(
+    ([key, value]) =>
+      originalFieldKeys.includes(key) &&
+      value &&
+      typeof value === 'string' &&
+      value !== '0'
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#F0F9FF] to-white p-6 font-sans">
@@ -66,11 +116,12 @@ if (error) {
                 <HiOutlineLocationMarker className="mr-1" /> {profile.city}, {profile.state}, {profile.country}
               </p>
             )}
+            <h1 className="text-xl font-bold text-slate-900">{profile.regCode}</h1>
           </div>
         </div>
 
         {/* Summary */}
-        <div className="bg-sky-50 border border-sky-100 p-4 rounded-md text-sm text-gray-800 leading-relaxed">
+        <div className="bg-sky-50 border-l-4 border-sky-200 p-4 rounded-md text-sm text-gray-800 leading-relaxed">
           <strong>Summary:</strong> <br />
           {profile.name} is affiliated with {profile.organization || 'N/A'} and located in {profile.city}, {profile.state}, {profile.country}. Their registration ID is {profile.regCode}. Additional firm and contact information is listed below.
         </div>
@@ -87,32 +138,45 @@ if (error) {
         {profile.notes && (
           <div>
             <h2 className="text-lg font-semibold text-yellow-700 mb-1">Internal Notes</h2>
-            <p className="bg-yellow-50 p-4 rounded border border-yellow-200 text-sm text-gray-700">{profile.notes}</p>
+            <p className="bg-yellow-50 p-4 rounded border-b-4 border-yellow-200 text-sm text-gray-700">{profile.notes}</p>
           </div>
         )}
 
         {/* Contact Info */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-sky-50 border border-sky-100 rounded-md p-4 text-sm text-gray-800">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-sky-50 border-l-4 border-sky-200 rounded-md p-4 text-sm text-gray-800">
           {profile.emailAddress && (
-            <p><HiOutlineMail className="inline mr-2 text-sky-600" />
+            <p>
+              <HiOutlineMail className="inline mr-2 text-sky-600" />
               <a href={`mailto:${profile.emailAddress}`} className="text-sky-700 hover:underline">{profile.emailAddress}</a>
             </p>
           )}
           {profile.phoneNumber && (
-            <p><HiOutlinePhone className="inline mr-2 text-sky-600" />
+            <p>
+              <HiOutlinePhone className="inline mr-2 text-sky-600" />
               <a href={`tel:${profile.phoneNumber}`} className="text-sky-700 hover:underline">{profile.phoneNumber}</a>
             </p>
           )}
           {profile.firmUrl && (
-            <p><HiOutlineGlobe className="inline mr-2 text-sky-600" />
-              <a href={profile.firmUrl.startsWith('http') ? profile.firmUrl : `https://${profile.firmUrl}`} target="_blank" rel="noopener noreferrer" className="text-sky-700 hover:underline">
+            <p>
+              <HiOutlineGlobe className="inline mr-2 text-sky-600" />
+              <a
+                href={profile.firmUrl.startsWith('http') ? profile.firmUrl : `https://${profile.firmUrl}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sky-700 hover:underline"
+              >
                 {profile.firmUrl}
               </a>
             </p>
           )}
           {profile.linkedInProfile && (
-            <p><svg className="inline w-4 h-4 text-sky-600 mr-2" fill="currentColor" viewBox="0 0 24 24"><path d="M4.98 3.5c0 1.38-1.1 2.5-2.48 2.5C1.11 6 0 4.88 0 3.5 0 2.12 1.11 1 2.5 1S5 2.12 5 3.5zM0 24h5V7H0v17zM7.8 7h4.8v2.4h.1c.7-1.3 2.4-2.7 4.9-2.7 5.3 0 6.3 3.5 6.3 8v9.3h-5V16c0-2.2 0-5-3-5s-3.5 2.3-3.5 4.8V24H7.8V7z"/></svg>
-              <a href={profile.linkedInProfile} target="_blank" rel="noopener noreferrer" className="text-sky-700 hover:underline">LinkedIn</a>
+            <p>
+              <svg className="inline w-4 h-4 text-sky-600 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M4.98 3.5c0 1.38-1.1 2.5-2.48 2.5C1.11 6 0 4.88 0 3.5 0 2.12 1.11 1 2.5 1S5 2.12 5 3.5zM0 24h5V7H0v17zM7.8 7h4.8v2.4h.1c.7-1.3 2.4-2.7 4.9-2.7 5.3 0 6.3 3.5 6.3 8v9.3h-5V16c0-2.2 0-5-3-5s-3.5 2.3-3.5 4.8V24H7.8V7z" />
+              </svg>
+              <a href={profile.linkedInProfile} target="_blank" rel="noopener noreferrer" className="text-sky-700 hover:underline">
+                LinkedIn
+              </a>
             </p>
           )}
         </div>
@@ -120,16 +184,52 @@ if (error) {
         {/* Details Section */}
         <div>
           <h2 className="text-lg font-semibold text-sky-800 mt-6 mb-2">Profile Details</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-            {Object.entries(profile).map(([key, value], i) =>
-              value && typeof value === 'string' && key !== '_id' && key !== 'biography' && key !== 'notes' && key !== 'admin' && key !== 'userId' && (
-                <div key={i} className="bg-gray-50 border border-gray-100 p-3 rounded">
-                  {/* <strong className="capitalize">{key.replace(/([A-Z])/g, ' $1')}:</strong> {value} */}
-                  <strong className="capitalize">{key === 'regCode' ? 'Registration Number' : key.replace(/([A-Z])/g, ' $1')}:
-                    </strong>{' '}{value}
+          {/* Updated Data Block */}
+          <div className="mb-6">
+            <h3 className="text-md font-medium text-sky-700 mb-2">Updated Data</h3>
+            <div className="bg-sky-50 border-l-4 border-sky-200 p-3 rounded-lg">
+              <strong className="text-gray-700">Data Updated As On:</strong>{' '}
+              <span className="text-gray-900">
+                {(() => {
+                  const now = new Date('2025-10-21T16:21:00+05:30'); // 04:21 PM IST, Oct 21, 2025
+                  const lastTuesday = new Date(now.setDate(now.getDate() - ((now.getDay() + 5) % 7)));
+                  lastTuesday.setHours(0, 0, 0, 0);
+                  return lastTuesday.toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  });
+                })()}
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm mt-3">
+              {updatedFields.map(([key, value], i) => (
+                <div key={`updated-${i}`} className="bg-sky-50 border border-sky-100 p-3 rounded">
+                  <strong className="capitalize">
+                    {key === 'regCode'
+                      ? 'Registration Number'
+                      : key.replace(/([A-Z])/g, ' $1')}:
+                  </strong>{' '}
+                  {value}
                 </div>
-              )
-            )}
+              ))}
+            </div>
+          </div>
+          {/* Original Data Block */}
+          <div>
+            <h3 className="text-md font-medium text-sky-700 mb-2">Original Data</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+              {originalFields.map(([key, value], i) => (
+                <div key={`original-${i}`} className="bg-gray-50 border border-gray-100 p-3 rounded">
+                  <strong className="capitalize">
+                    {key === 'regCode'
+                      ? 'Registration Number'
+                      : key.replace(/([A-Z])/g, ' $1')}:
+                  </strong>{' '}
+                  {value}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
