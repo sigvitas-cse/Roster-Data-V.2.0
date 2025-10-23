@@ -546,6 +546,7 @@ function BigDataPage() {
           <h4 className="text-sm text-slate-600 font-semibold mb-2">Popular Queries</h4>
           <div className="flex flex-wrap gap-2">
             {[
+              { term: 'All', field: '' },
               { term: 'Attorney', field: 'agentAttorney' },
               { term: 'Agent', field: 'agentAttorney' },
               { term: 'Chicago', field: 'city' },
@@ -555,11 +556,23 @@ function BigDataPage() {
               <button
                 key={term}
                 onClick={() => {
-                  setSearchQuery(term);
+                  // setSearchQuery(term);
+                  setSearchQuery(term === 'All' ? '' : term);
                   setDetectedFields([field]);
                   setSuggestions({});
                   setIsInputFocused(false);
-                  handleSuggestionSearch(term, field);
+                  const params = new URLSearchParams(location.search);
+                  if (term === 'All') {
+                    params.delete('query'); // Remove query parameter
+                    params.set('page', 1);
+                    fetchData('', 1, '');
+                    // logSearch('', ''); // Log the "All" search
+                  } else {
+                    params.set('query', term);
+                    params.set('page', 1);
+                    handleSuggestionSearch(term, field);
+                  }
+                  window.history.replaceState({}, '', `${location.pathname}?${params.toString()}`);
                 }}
                 className="bg-sky-50 text-sky-700 text-xs px-3 py-1 rounded-full hover:bg-sky-100 transition"
               >
