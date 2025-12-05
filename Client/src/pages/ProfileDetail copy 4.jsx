@@ -74,9 +74,10 @@ function ProfileDetail() {
     'agentAttorney',
     'dateOfPatent',
     'agentLicensed',
+    'firmOrOrganization',
     'updatedPhoneNumber',
     'emailAddress',
-    'firmOrOrganization',
+    'updatedOrganization',
     'firmUrl',
     'updatedAddress',
     'updatedCity',
@@ -93,19 +94,12 @@ function ProfileDetail() {
       value !== '0'
   );
 
-  const updatedProfile = {
-  ...profile,
-  address: `${profile.addressLine1 || ""}${profile.addressLine2 ? ", " + profile.addressLine2 : ""}`
-};
-
-
   // Original data fields (same keys)
   const originalFieldKeys = [
     'name',
-    'organization',
-    // 'addressLine1',
-    // 'addressLine2',
-    'address',
+    'firmOrOrganization',
+    'addressLine1',
+    'addressLine2',
     'city',
     'state',
     'country',
@@ -114,15 +108,13 @@ function ProfileDetail() {
     'regCode',
     'agentAttorney',
   ];
-  const originalFields = Object.entries(updatedProfile)
-  .filter(
+  const originalFields = Object.entries(profile).filter(
     ([key, value]) =>
       originalFieldKeys.includes(key) &&
       value &&
       typeof value === 'string' &&
       value !== '0'
-  )
-  .sort(([a], [b]) => originalFieldKeys.indexOf(a) - originalFieldKeys.indexOf(b));
+  );
 
  // Helper: Combine Address Line 1 + 2 intelligently
 const getFullAddress = () => {
@@ -132,7 +124,7 @@ const getFullAddress = () => {
   console.log("addressLine2:",line2);
 
   if (!line1 && !line2) return '—';
-  if (!line1) return line2;
+  // if (!line1) return line2;
   if (!line2) return line1;
   return `${line1}, ${line2}`;
 };
@@ -161,19 +153,25 @@ const formatLicenseDate = (dateStr) => {
   const overviewFields = [
     { label: 'Name', key: 'name' },
     { label: 'Education', key: 'highTechQualification' },
-    { label: 'Firm Or Organization Name', key: 'organization' },
+    { label: 'Organization/Law Firm Name', key: 'firmOrOrganization' },
     { label: 'Address', value: getFullAddress() }, // ← Smart merged address
+    
     { label: 'City', key: 'city' },
     { label: 'State', key: 'state' },
     { label: 'Country', key: 'country' },
     { label: 'Zipcode', key: 'zipcode' },
     { label: 'Phone Number', key: 'phoneNumber' },
-    { label: 'Registration Number', key: 'regCode' },
+    { label: 'Reg Code', key: 'regCode' },
     { label: 'Agent/Attorney', key: 'agentAttorney' },
-    { label: 'Date of Patent Agent Licensed', value: formatLicenseDate(profile.dateOfPatent) },
-    { label: 'Date of Patent Attorney Licensed', value: formatLicenseDate(profile.agentLicensed) },
-    { label: 'Firm Or Organization', key: 'firmOrOrganization' },
-    { label: 'Firm Or Organization URL', key: 'firmUrl' },
+    { 
+    label: 'Date of Patent Agent Licensed', 
+    value: formatLicenseDate(profile.agentLicensed) 
+  },
+  { 
+    label: 'Date of Patent Attorney Licensed', 
+    value: formatLicenseDate(profile.dateOfPatent) 
+  },
+    { label: 'Firm/Organization URL', key: 'firmUrl' },
     { label: 'LinkedIn Profile URL', key: 'linkedInProfile' },
   ];
 
@@ -386,48 +384,67 @@ const formatLicenseDate = (dateStr) => {
               </section>
             </div>
 
-            {/* Notes */}
-            {profile.notes && (
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-5">
-                <h3 className="font-semibold text-amber-900 mb-2">Internal Notes</h3>
-                <p className="text-amber-800 whitespace-pre-line">{profile.notes}</p>
-              </div>
+            {/* Biography / Notes */}
+            {(profile.biography || profile.notes) && (
+              <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {profile.biography && (
+                  <div className="bg-slate-50 border border-slate-100 rounded-xl p-4">
+                    <h2 className="text-sm font-semibold text-slate-800 mb-2">
+                      Biography
+                    </h2>
+                    <p className="text-xs sm:text-sm text-slate-700 leading-relaxed whitespace-pre-line">
+                      {profile.biography}
+                    </p>
+                  </div>
+                )}
+                {profile.notes && (
+                  <div className="bg-amber-50 border border-amber-100 rounded-xl p-4">
+                    <h2 className="text-sm font-semibold text-amber-800 mb-2">
+                      Internal Notes
+                    </h2>
+                    <p className="text-xs sm:text-sm text-amber-900 leading-relaxed whitespace-pre-line">
+                      {profile.notes}
+                    </p>
+                  </div>
+                )}
+              </section>
             )}
 
             {/* NEW: Overview Table (Original Data) */}
-            {/* Profile Overview Table – FULLY FIXED */}
             <section className="bg-slate-50 border border-slate-200 rounded-2xl overflow-hidden shadow-md">
-              <div className="px-6 py-4 bg-slate-100 border-b border-slate-200">
+              <div className="px-5 py-4 border-b border-slate-200 bg-slate-100">
                 <h2 className="text-sm font-semibold text-slate-900">Profile Overview</h2>
-                <p className="text-xs text-slate-600">Original data from primary source</p>
+                <p className="text-xs text-slate-600 mt-0.5">Original data from primary source</p>
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-xs text-slate-700">
                   <tbody className="divide-y divide-slate-200">
-                    {overviewFields.map((field, index) => {
-                      const rawValue = field.value !== undefined ? field.value : profile[field.key];
-                      const displayValue = (rawValue && rawValue !== '0' && rawValue !== 'NA') ? rawValue : '—';
-                      const isUrlField = field.key === 'firmUrl' || field.key === 'linkedInProfile';
+                    {overviewFields.map(({ label, key }) => {
+                      const value = profile?.[key];
+                      console.log("label address",label.Address);
+
+                      const displayValue = value && value !== '0' ? value : '—';
+                      const isUrl = key === 'firmUrl' || key === 'linkedInProfile';
+                      const url = key === 'firmUrl' ? (value?.startsWith('http') ? value : `https://${value}`) 
+                                   : key === 'linkedInProfile' ? value : null;
 
                       return (
-                        <tr key={index} className="hover:bg-slate-100 transition-colors">
-                          <td className="py-4 pl-6 pr-4 font-medium text-slate-800 w-80">
-                            {field.label}
+                        <tr key={key} className="hover:bg-slate-100/50 transition-colors">
+                          <td className="py-3 pl-5 pr-3 font-medium text-slate-800 w-64">
+                            {label}
                           </td>
-                          <td className="py-4 pr-6 text-slate-900">
-                            {isUrlField && rawValue && rawValue !== '0' && rawValue !== 'NA' ? (
+                          <td className="py-3 pr-5 text-slate-900">
+                            {isUrl && value && value !== '0' ? (
                               <a
-                                href={field.key === 'firmUrl' 
-                                  ? (rawValue.startsWith('http') ? rawValue : `https://${rawValue}`)
-                                  : rawValue}
+                                href={url}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-sky-600 hover:underline break-all"
                               >
-                                {rawValue}
+                                {value}
                               </a>
                             ) : (
-                              <span className={displayValue === '—' ? 'text-slate-400 italic' : ''}>
+                              <span className={displayValue === '—' ? 'text-slate-400' : ''}>
                                 {displayValue}
                               </span>
                             )}
@@ -458,7 +475,17 @@ const formatLicenseDate = (dateStr) => {
               </button>
             </div>
 
-            
+            {/* 
+              1. Here I want the original information of these columns:
+              Name	Education	Organization/Law Firm Name	Address Line 1	Address Line 2	City	State	Country	Zipcode	Phone Number	Reg Code	Agent/Attorney	Date of Patent Agent Licensed	Date of Patent Attorney Licensed	Firm or Organization Firm/Organization URL LinkedIn Profile URL
+
+              This is like overview and it should be in table format
+
+              After this give one button Data grow like that and after clicking that button then user shuld see these inforamtion(components) Original data and Updated data 
+
+              Remaining logic are all same
+            */}
+
             {/* Conditional: Updated vs Original Data Comparison */}
             {/* Updated vs Original data */}
             {showDataGrowth && (
@@ -503,10 +530,7 @@ const formatLicenseDate = (dateStr) => {
                             ? 'Registration Number'
                             : key.replace(/([A-Z])/g, ' $1').trim()}
                         </p>
-                        <p className="text-slate-900 break-words">
-                          {key === "address" ? getFullAddress() : value}
-                        </p>
-                        {/* <p className="text-slate-900 break-words">{value}</p> */}
+                        <p className="text-slate-900 break-words">{value}</p>
                       </div>
                     ))}
                   </div>
@@ -539,17 +563,9 @@ const formatLicenseDate = (dateStr) => {
                         className="bg-white border border-sky-100/70 p-3 rounded-xl shadow-sm"
                       >
                         <p className="text-[11px] uppercase tracking-wide text-sky-700 mb-0.5">
-                          {/* {key === 'regCode' ? 'Registration Number' : key.replace(/([A-Z])/g, ' $1').trim()} */}
-                          {
-                            key === 'regCode'
+                          {key === 'regCode'
                             ? 'Registration Number'
-                            : key === 'dateOfPatent'
-                            ? 'Date Of Patent Agent Licensed'
-                            : key === 'agentLicensed'
-                            ? 'Date Of Patent Attorney Licensed'
-                            : key.replace(/([A-Z])/g, ' $1').trim()
-                          }
-
+                            : key.replace(/([A-Z])/g, ' $1').trim()}
                         </p>
                         <p className="text-slate-900 break-words">{value}</p>
                       </div>

@@ -28,8 +28,6 @@ function ProfileDetail() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [error, setError] = useState('');
-  const [showDataGrowth, setShowDataGrowth] = useState(false); // New state
-
   const API_URL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
@@ -74,9 +72,10 @@ function ProfileDetail() {
     'agentAttorney',
     'dateOfPatent',
     'agentLicensed',
+    'firmOrOrganization',
     'updatedPhoneNumber',
     'emailAddress',
-    'firmOrOrganization',
+    'updatedOrganization',
     'firmUrl',
     'updatedAddress',
     'updatedCity',
@@ -93,19 +92,12 @@ function ProfileDetail() {
       value !== '0'
   );
 
-  const updatedProfile = {
-  ...profile,
-  address: `${profile.addressLine1 || ""}${profile.addressLine2 ? ", " + profile.addressLine2 : ""}`
-};
-
-
   // Original data fields (same keys)
   const originalFieldKeys = [
     'name',
-    'organization',
-    // 'addressLine1',
-    // 'addressLine2',
-    'address',
+    'firmOrOrganization',
+    'addressLine1',
+    'addressLine2',
     'city',
     'state',
     'country',
@@ -114,68 +106,13 @@ function ProfileDetail() {
     'regCode',
     'agentAttorney',
   ];
-  const originalFields = Object.entries(updatedProfile)
-  .filter(
+  const originalFields = Object.entries(profile).filter(
     ([key, value]) =>
       originalFieldKeys.includes(key) &&
       value &&
       typeof value === 'string' &&
       value !== '0'
-  )
-  .sort(([a], [b]) => originalFieldKeys.indexOf(a) - originalFieldKeys.indexOf(b));
-
- // Helper: Combine Address Line 1 + 2 intelligently
-const getFullAddress = () => {
-  const line1 = profile.addressLine1?.trim();
-  const line2 = profile.addressLine2?.trim();
-  console.log("addressLine1:",line1);
-  console.log("addressLine2:",line2);
-
-  if (!line1 && !line2) return '—';
-  if (!line1) return line2;
-  if (!line2) return line1;
-  return `${line1}, ${line2}`;
-};
-
-// Helper: Format license dates properly (your real format: "02-09-2004 11-18-2005")
-const formatLicenseDate = (dateStr) => {
-  if (!dateStr || dateStr === '0' || dateStr === 'NA' || !dateStr.trim()) return '—';
-
-  const dates = dateStr.trim().split(/\s+/);
-  return dates
-    .map(date => {
-      const [mm, dd, yyyy] = date.split('-');
-      if (!mm || !dd || !yyyy) return date;
-      const fullYear = yyyy.length === 2 ? '20' + yyyy : yyyy;
-      const dateObj = new Date(`${fullYear}-${mm}-${dd}`);
-      return dateObj.toLocaleDateString('en-US', {
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric'
-      });
-    })
-    .join(' → ');
-};
-
-  // Define fields for Overview Table (Original Data)
-  const overviewFields = [
-    { label: 'Name', key: 'name' },
-    { label: 'Education', key: 'highTechQualification' },
-    { label: 'Firm Or Organization Name', key: 'organization' },
-    { label: 'Address', value: getFullAddress() }, // ← Smart merged address
-    { label: 'City', key: 'city' },
-    { label: 'State', key: 'state' },
-    { label: 'Country', key: 'country' },
-    { label: 'Zipcode', key: 'zipcode' },
-    { label: 'Phone Number', key: 'phoneNumber' },
-    { label: 'Registration Number', key: 'regCode' },
-    { label: 'Agent/Attorney', key: 'agentAttorney' },
-    { label: 'Date of Patent Agent Licensed', value: formatLicenseDate(profile.dateOfPatent) },
-    { label: 'Date of Patent Attorney Licensed', value: formatLicenseDate(profile.agentLicensed) },
-    { label: 'Firm Or Organization', key: 'firmOrOrganization' },
-    { label: 'Firm Or Organization URL', key: 'firmUrl' },
-    { label: 'LinkedIn Profile URL', key: 'linkedInProfile' },
-  ];
+  );
 
   const lastUpdatedLabel = getLastUpdatedLabel();
   const displayOrganization = profile.organization || profile.firmOrOrganization;
@@ -386,82 +323,33 @@ const formatLicenseDate = (dateStr) => {
               </section>
             </div>
 
-            {/* Notes */}
-            {profile.notes && (
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-5">
-                <h3 className="font-semibold text-amber-900 mb-2">Internal Notes</h3>
-                <p className="text-amber-800 whitespace-pre-line">{profile.notes}</p>
-              </div>
+            {/* Biography / Notes */}
+            {(profile.biography || profile.notes) && (
+              <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {profile.biography && (
+                  <div className="bg-slate-50 border border-slate-100 rounded-xl p-4">
+                    <h2 className="text-sm font-semibold text-slate-800 mb-2">
+                      Biography
+                    </h2>
+                    <p className="text-xs sm:text-sm text-slate-700 leading-relaxed whitespace-pre-line">
+                      {profile.biography}
+                    </p>
+                  </div>
+                )}
+                {profile.notes && (
+                  <div className="bg-amber-50 border border-amber-100 rounded-xl p-4">
+                    <h2 className="text-sm font-semibold text-amber-800 mb-2">
+                      Internal Notes
+                    </h2>
+                    <p className="text-xs sm:text-sm text-amber-900 leading-relaxed whitespace-pre-line">
+                      {profile.notes}
+                    </p>
+                  </div>
+                )}
+              </section>
             )}
 
-            {/* NEW: Overview Table (Original Data) */}
-            {/* Profile Overview Table – FULLY FIXED */}
-            <section className="bg-slate-50 border border-slate-200 rounded-2xl overflow-hidden shadow-md">
-              <div className="px-6 py-4 bg-slate-100 border-b border-slate-200">
-                <h2 className="text-sm font-semibold text-slate-900">Profile Overview</h2>
-                <p className="text-xs text-slate-600">Original data from primary source</p>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <tbody className="divide-y divide-slate-200">
-                    {overviewFields.map((field, index) => {
-                      const rawValue = field.value !== undefined ? field.value : profile[field.key];
-                      const displayValue = (rawValue && rawValue !== '0' && rawValue !== 'NA') ? rawValue : '—';
-                      const isUrlField = field.key === 'firmUrl' || field.key === 'linkedInProfile';
-
-                      return (
-                        <tr key={index} className="hover:bg-slate-100 transition-colors">
-                          <td className="py-4 pl-6 pr-4 font-medium text-slate-800 w-80">
-                            {field.label}
-                          </td>
-                          <td className="py-4 pr-6 text-slate-900">
-                            {isUrlField && rawValue && rawValue !== '0' && rawValue !== 'NA' ? (
-                              <a
-                                href={field.key === 'firmUrl' 
-                                  ? (rawValue.startsWith('http') ? rawValue : `https://${rawValue}`)
-                                  : rawValue}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-sky-600 hover:underline break-all"
-                              >
-                                {rawValue}
-                              </a>
-                            ) : (
-                              <span className={displayValue === '—' ? 'text-slate-400 italic' : ''}>
-                                {displayValue}
-                              </span>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-
-            {/* Toggle Button for Data Growth */}
-            <div className="flex justify-center">
-              <button
-                onClick={() => setShowDataGrowth(!showDataGrowth)}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-sky-600 to-sky-700 text-white font-medium text-sm rounded-full shadow-lg hover:from-sky-700 hover:to-sky-800 transition-all active:scale-95"
-              >
-                <span>{showDataGrowth ? 'Hide' : 'Show'} Data Growth</span>
-                <svg
-                  className={`w-4 h-4 transition-transform ${showDataGrowth ? 'rotate-180' : ''}`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-            </div>
-
-            
-            {/* Conditional: Updated vs Original Data Comparison */}
             {/* Updated vs Original data */}
-            {showDataGrowth && (
             <section className="space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-sm font-semibold text-slate-900">
@@ -470,7 +358,42 @@ const formatLicenseDate = (dateStr) => {
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                
+                {/* Updated Data */}
+                <div className="bg-sky-50/80 border border-sky-100 rounded-2xl p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <h3 className="text-xs font-semibold text-sky-900 uppercase tracking-wide">
+                        Updated Data
+                      </h3>
+                      <p className="text-[11px] text-sky-700/80">
+                        Latest validated information
+                      </p>
+                    </div>
+                    <span className="text-[10px] px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">
+                      Live
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm max-h-80 overflow-auto pr-1">
+                    {updatedFields.length === 0 && (
+                      <p className="text-slate-500 italic col-span-full">
+                        No updated data available.
+                      </p>
+                    )}
+                    {updatedFields.map(([key, value], i) => (
+                      <div
+                        key={`updated-${i}`}
+                        className="bg-white border border-sky-100/70 p-3 rounded-xl shadow-sm"
+                      >
+                        <p className="text-[11px] uppercase tracking-wide text-sky-700 mb-0.5">
+                          {key === 'regCode'
+                            ? 'Registration Number'
+                            : key.replace(/([A-Z])/g, ' $1').trim()}
+                        </p>
+                        <p className="text-slate-900 break-words">{value}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
 
                 {/* Original Data */}
                 <div className="bg-slate-50/80 border border-slate-100 rounded-2xl p-4">
@@ -503,63 +426,13 @@ const formatLicenseDate = (dateStr) => {
                             ? 'Registration Number'
                             : key.replace(/([A-Z])/g, ' $1').trim()}
                         </p>
-                        <p className="text-slate-900 break-words">
-                          {key === "address" ? getFullAddress() : value}
-                        </p>
-                        {/* <p className="text-slate-900 break-words">{value}</p> */}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Updated Data */}
-                <div className="bg-sky-50/80 border border-sky-100 rounded-2xl p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <h3 className="text-xs font-semibold text-sky-900 uppercase tracking-wide">
-                        Updated Data
-                      </h3>
-                      <p className="text-[11px] text-sky-700/80">
-                        Latest validated information
-                      </p>
-                    </div>
-                    <span className="text-[10px] px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">
-                      Live
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm max-h-80 overflow-auto pr-1">
-                    {updatedFields.length === 0 && (
-                      <p className="text-slate-500 italic col-span-full">
-                        No updated data available.
-                      </p>
-                    )}
-                    {updatedFields.map(([key, value], i) => (
-                      <div
-                        key={`updated-${i}`}
-                        className="bg-white border border-sky-100/70 p-3 rounded-xl shadow-sm"
-                      >
-                        <p className="text-[11px] uppercase tracking-wide text-sky-700 mb-0.5">
-                          {/* {key === 'regCode' ? 'Registration Number' : key.replace(/([A-Z])/g, ' $1').trim()} */}
-                          {
-                            key === 'regCode'
-                            ? 'Registration Number'
-                            : key === 'dateOfPatent'
-                            ? 'Date Of Patent Agent Licensed'
-                            : key === 'agentLicensed'
-                            ? 'Date Of Patent Attorney Licensed'
-                            : key.replace(/([A-Z])/g, ' $1').trim()
-                          }
-
-                        </p>
                         <p className="text-slate-900 break-words">{value}</p>
                       </div>
                     ))}
                   </div>
                 </div>
-
               </div>
             </section>
-            )}
 
             {/* Map */}
             {profile.city && profile.state && (

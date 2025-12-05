@@ -25,10 +25,11 @@ const nodemailer = require('nodemailer');
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: 'darshan@sigvitas.com',
-    pass: 'aqhf klky wpct uuuu', // App password generated for Gmail
+    user: 'dbr@sigvitas.com',
+    pass: 'ojrn uyjc ffoa mjih', // App password generated for Gmail
   },
 });
+//ojrn uyjc ffoa mjih
 // aqhf klky wpct uuuu
 // pass: 'nkpt ixhc gsgo yzyh',
 
@@ -790,9 +791,9 @@ router.post("/upload-excel-dynamic", upload.single("excelFile"), async (req, res
 
 
     const mailOptions = {
-      from: 'darshan@sigvitas.com',
-      // to: `dverma@sigvitas.com, darshan@sigvitas.com`,
-      to: `darshan@sigvitas.com`,
+      from: 'dbr@sigvitas.com',
+      // to: `dverma@sigvitas.com, dbr@sigvitas.com`,
+      to: `dverma@sigvitas.com`,
       subject: 'Re: Daily Data Uploading',
       // text: `Hello Sir, /n/n${userId2} uploaded the data successfully on ${formattedDate} at ${formattedTime}. Total number of users: ${total}/n/nBest Regards,/nDarshan`,
       text: `Hello Sir,\n\n${userId2} uploaded the data successfully on ${formattedDate} at ${formattedTime}. \nTotal Attorneys in the Roster: ${total}\n\nBest Regards,\nDarshan`,
@@ -841,7 +842,7 @@ try{
 
   // Send OTP Email
   const mailOptions = {
-    from: 'darshan@sigvitas.com',
+    from: 'dbr@sigvitas.com',
     to: email,
     subject: 'Password Reset OTP',
     text: `Your OTP is ${otp}. It is valid for 1 minute.`,
